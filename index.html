@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ėjimas po ėjimo – šachmatų mokykla</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="vendor/chess.js"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#EEF2F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1620" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Šachmatų mokykla: 150 pamokų, užduotys, taktika, robotas su Elo reitingu ir žaidimas dviese.">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+:root{
+  --bg:#EEF2F6;--surface:#FFFFFF;--surface2:#F6F8FB;--ink:#142033;--muted:#5A6B80;--line:#D5DDE7;
+  --sq-l:#E3E9EF;--sq-d:#7D95AD;--frame:#2B3B52;
+  --gold:#D48A1F;--gold-soft:#FBEBD0;--gold-ink:#7E4F0C;
+  --ok:#2E8656;--ok-soft:#DDF1E5;--bad:#C0443B;--bad-soft:#F8E0DD;
+  --sel:rgba(212,138,31,.55);--last:rgba(212,138,31,.28);--dot:rgba(20,32,51,.28);
+  color-scheme:light;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1620;--surface:#18212D;--surface2:#1E2936;--ink:#E7EDF4;--muted:#95A5B8;--line:#2C3949;
+  --sq-l:#A8B7C7;--sq-d:#506A86;--frame:#5B7088;
+  --gold:#F0B04A;--gold-soft:#3A2E1A;--gold-ink:#F6CF8E;
+  --ok:#5CC48A;--ok-soft:#1B3427;--bad:#EE7A70;--bad-soft:#3A1F1E;
+  --sel:rgba(240,176,74,.6);--last:rgba(240,176,74,.32);--dot:rgba(15,22,32,.4);
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0F1620;--surface:#18212D;--surface2:#1E2936;--ink:#E7EDF4;--muted:#95A5B8;--line:#2C3949;
+  --sq-l:#A8B7C7;--sq-d:#506A86;--frame:#5B7088;
+  --gold:#F0B04A;--gold-soft:#3A2E1A;--gold-ink:#F6CF8E;
+  --ok:#5CC48A;--ok-soft:#1B3427;--bad:#EE7A70;--bad-soft:#3A1F1E;
+  --sel:rgba(240,176,74,.6);--last:rgba(240,176,74,.32);--dot:rgba(15,22,32,.4);color-scheme:dark;}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Fraunces,Georgia,"Times New Roman",serif;font-weight:700;line-height:1.15;margin:0}
+h1{font-size:1.9rem}h2{font-size:1.45rem}h3{font-size:1.1rem}
+p{margin:0}
+button{font:inherit;color:inherit}
+main{max-width:980px;margin:0 auto;padding:20px 16px 110px}
+.view{display:none}.view.on{display:block}
+.muted{color:var(--muted)}
+.small{font-size:.875rem}
+
+/* nav */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs .in{max-width:620px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr)}
+nav.tabs button{background:none;border:0;padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:.68rem;font-weight:600;color:var(--muted);cursor:pointer}
+nav.tabs button .g{font-size:1.45rem;line-height:1.1;font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif}
+nav.tabs button[aria-current="page"]{color:var(--ink)}
+nav.tabs button[aria-current="page"] .g{color:var(--gold)}
+button:focus-visible,.sq:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* home hero: promotion track */
+.hero{display:grid;gap:18px;grid-template-columns:1fr;align-items:center;margin-bottom:22px}
+@media(min-width:760px){.hero{grid-template-columns:auto 1fr;gap:36px}}
+.piece-big{font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;font-size:9.5rem;line-height:1;color:var(--gold);text-shadow:0 2px 0 var(--gold-ink);text-align:center;width:11rem;margin:0 auto}
+.rankname{font-family:Fraunces,Georgia,serif;font-size:2.4rem;font-weight:700;line-height:1.05}
+.track{display:flex;gap:4px;margin:14px 0 8px;align-items:flex-end}
+.track span{flex:1;text-align:center;font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;font-size:1.6rem;color:var(--line);padding-bottom:4px;border-bottom:4px solid var(--line)}
+.track span.got{color:var(--ink);border-color:var(--gold)}
+.track span.now{color:var(--gold);font-size:2.1rem}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:5px;transition:width .5s}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:640px){.grid2{grid-template-columns:1fr 1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.ring{width:84px;height:84px;flex:none}
+.bigbtn{display:block;width:100%;border:0;border-radius:12px;background:var(--ink);color:var(--bg);padding:15px 18px;font-weight:700;font-size:1.05rem;cursor:pointer;text-align:left}
+.bigbtn small{display:block;font-weight:400;opacity:.8;font-size:.85rem}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 14px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.gold{background:var(--gold);color:#1d1406;border-color:var(--gold)}
+.btn:disabled{opacity:.45;cursor:default}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--surface);padding:8px 13px;font-weight:600;cursor:pointer;font-size:.9rem}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.sec{margin-top:26px}.sec>h2{margin-bottom:12px}
+
+/* lists */
+.list{display:grid;gap:8px}
+.item{display:flex;gap:14px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.item .gl{font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;font-size:1.8rem;width:2rem;text-align:center;line-height:1}
+.item .t{flex:1;min-width:0}.item .t b{display:block}
+.chip{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.gold{background:var(--gold-soft);color:var(--gold-ink)}
+.item.done .gl{color:var(--ok)}
+
+/* trainer */
+.trainer{display:grid;gap:18px}
+@media(min-width:820px){.trainer{grid-template-columns:minmax(0,480px) 1fr;align-items:start}}
+.back{background:none;border:0;padding:4px 0;font-weight:600;color:var(--muted);cursor:pointer;margin-bottom:10px}
+.status{border-radius:10px;padding:10px 12px;background:var(--surface2);font-weight:600;min-height:2.6em}
+.status.ok{background:var(--ok-soft);color:var(--ok)}
+.status.bad{background:var(--bad-soft);color:var(--bad)}
+
+/* board */
+.boardwrap{width:100%;max-width:480px;margin:0 auto}
+.board{display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1/1;width:100%;border-radius:6px;overflow:hidden;box-shadow:0 0 0 3px var(--frame);touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.sq{position:relative;border:0;padding:0;margin:0;display:flex;align-items:center;justify-content:center;cursor:pointer;aspect-ratio:1/1;
+  font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2","Apple Symbols",serif;font-size:min(9.4vw,46px);line-height:1}
+.sq.l{background:var(--sq-l)}.sq.d{background:var(--sq-d)}
+.sq.last{box-shadow:inset 0 0 0 999px var(--last)}
+.sq.sel{box-shadow:inset 0 0 0 999px var(--sel)}
+.sq.hint{box-shadow:inset 0 0 0 4px var(--gold)}
+.sq.check{background:radial-gradient(circle,#ff5a4a 0,#e0443a 35%,transparent 72%),var(--sq-d)}
+.sq.t::after{content:"";position:absolute;width:28%;height:28%;border-radius:50%;background:var(--dot)}
+.sq.tc::after{content:"";position:absolute;inset:4%;border-radius:50%;border:5px solid var(--dot)}
+.pc{position:relative;z-index:1;pointer-events:none;transform:translateY(-2%);display:inline-block}
+/* skins */
+.skin-wood .pc.w{color:#EFCF96;text-shadow:none;filter:drop-shadow(0 1px 0 #4a2e12) drop-shadow(0 -1px 0 #4a2e12) drop-shadow(1px 0 0 #4a2e12) drop-shadow(-1px 0 0 #4a2e12)}
+.skin-wood .pc.b{color:#6B3E1E;text-shadow:none;filter:drop-shadow(0 1px 0 rgba(255,225,180,.55))}
+.skin-marble .pc,.skin-emerald .pc,.skin-gems .pc,.skin-ice .pc,.skin-sunset .pc,.skin-metal .pc,.skin-cosmos .pc,.skin-diamond .pc{-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;text-shadow:none}
+.skin-marble .pc.w{background-image:linear-gradient(135deg,#fff 0%,#d5dae1 38%,#fff 52%,#bfc6d0 100%);filter:drop-shadow(0 1px 0 #2a3038) drop-shadow(0 -1px 0 #2a3038) drop-shadow(1px 0 0 #2a3038) drop-shadow(-1px 0 0 #2a3038)}
+.skin-marble .pc.b{background-image:linear-gradient(135deg,#59606b 0%,#0c0e11 45%,#3b414b 60%,#08090b 100%);filter:drop-shadow(0 1px 0 rgba(255,255,255,.35))}
+.skin-emerald .pc.w{background-image:linear-gradient(160deg,#c9ffe0,#5fe39b 50%,#1fa862);filter:drop-shadow(0 1px 0 #0a3d24) drop-shadow(0 -1px 0 #0a3d24) drop-shadow(1px 0 0 #0a3d24) drop-shadow(-1px 0 0 #0a3d24)}
+.skin-emerald .pc.b{background-image:linear-gradient(160deg,#1a7a4f,#06301e 60%,#021a10);filter:drop-shadow(0 0 2px rgba(120,255,180,.6))}
+.skin-gems .pc.w{background-image:linear-gradient(160deg,#ffb3b3,#ff3b4e 45%,#9e0018);filter:drop-shadow(0 1px 0 #3d0008) drop-shadow(0 -1px 0 #3d0008) drop-shadow(1px 0 0 #3d0008) drop-shadow(-1px 0 0 #3d0008) drop-shadow(0 0 4px rgba(255,60,80,.55))}
+.skin-gems .pc.b{background-image:linear-gradient(160deg,#a9d1ff,#2f7cf6 45%,#0a2e7a);filter:drop-shadow(0 1px 0 #041640) drop-shadow(0 0 4px rgba(60,140,255,.6))}
+.skin-neon .pc.w{color:#C8FDFF;text-shadow:none;filter:drop-shadow(0 0 2px #00e5ff) drop-shadow(0 0 6px #00e5ff) drop-shadow(0 0 1px #003a40)}
+.skin-neon .pc.b{color:#FF7BE5;text-shadow:none;filter:drop-shadow(0 0 2px #ff2bd6) drop-shadow(0 0 6px #ff2bd6) drop-shadow(0 0 1px #40002f)}
+.skin-ice .pc.w{background-image:linear-gradient(170deg,#ffffff 10%,#c8eeff 45%,#7cc8f0 75%,#ffffff 100%);filter:drop-shadow(0 0 1px #1c5c86) drop-shadow(0 0 5px rgba(160,225,255,.95))}
+.skin-ice .pc.b{background-image:linear-gradient(170deg,#4a8fd6 0%,#123a6e 50%,#071a36 100%);filter:drop-shadow(0 0 1px #cdeeff) drop-shadow(0 0 5px rgba(140,210,255,.7))}
+.skin-sunset .pc.w{background-image:linear-gradient(180deg,#ffe28a 0%,#ff9a5a 45%,#ff3d7f 100%);filter:drop-shadow(0 1px 0 #5c1030) drop-shadow(0 -1px 0 #5c1030) drop-shadow(1px 0 0 #5c1030) drop-shadow(-1px 0 0 #5c1030) drop-shadow(0 0 5px rgba(255,120,90,.6))}
+.skin-sunset .pc.b{background-image:linear-gradient(180deg,#c06cff 0%,#6a3093 50%,#250a45 100%);filter:drop-shadow(0 0 1px #f3d0ff) drop-shadow(0 0 5px rgba(170,90,255,.6))}
+.skin-metal .pc{background-size:250% 100%;animation:shine 3.5s linear infinite}
+.skin-metal .pc.w{background-image:linear-gradient(110deg,#9aa3af 0%,#eef1f5 20%,#ffffff 28%,#a7b0bc 40%,#e9edf2 60%,#ffffff 68%,#9aa3af 80%,#eef1f5 100%);filter:drop-shadow(0 1px 0 #2d333b) drop-shadow(0 -1px 0 #2d333b) drop-shadow(1px 0 0 #2d333b) drop-shadow(-1px 0 0 #2d333b)}
+.skin-metal .pc.b{background-image:linear-gradient(110deg,#8a6100 0%,#f5d26b 20%,#fff6c9 28%,#b8860b 40%,#f0c850 60%,#fff6c9 68%,#8a6100 80%,#f5d26b 100%);filter:drop-shadow(0 1px 0 #3d2a00) drop-shadow(0 -1px 0 #3d2a00) drop-shadow(1px 0 0 #3d2a00) drop-shadow(-1px 0 0 #3d2a00) drop-shadow(0 0 4px rgba(255,200,60,.5))}
+.skin-cosmos .pc{background-size:200% 200%;animation:shine 6s linear infinite}
+.skin-cosmos .pc.w{background-image:linear-gradient(135deg,#a5f3fc,#c4b5fd 30%,#f0abfc 55%,#ffffff 70%,#a5f3fc 100%);filter:drop-shadow(0 0 1px #2e1065) drop-shadow(0 0 6px rgba(196,181,253,.9))}
+.skin-cosmos .pc.b{background-image:linear-gradient(135deg,#1e1b4b,#7c3aed 35%,#db2777 60%,#1e1b4b 100%);filter:drop-shadow(0 0 1px #fce7f3) drop-shadow(0 0 6px rgba(219,39,119,.7))}
+.skin-diamond .pc{background-size:300% 100%;animation:shine 2.6s linear infinite}
+.skin-diamond .pc.w{background-image:linear-gradient(90deg,#ffd1dc,#ffffff 12%,#c7f0ff 25%,#fff7c2 38%,#e3d1ff 50%,#ffffff 62%,#c7ffe6 75%,#ffd1dc 100%);filter:drop-shadow(0 0 1px #3b2a5a) drop-shadow(0 0 3px #fff) drop-shadow(0 0 8px rgba(190,160,255,.9))}
+.skin-diamond .pc.b{background-image:linear-gradient(90deg,#120f2b,#3a2f8a 15%,#0e7490 30%,#120f2b 45%,#7e22ce 60%,#be185d 75%,#120f2b 100%);filter:drop-shadow(0 0 1px #e9e4ff) drop-shadow(0 0 6px rgba(140,110,255,.85))}
+@keyframes shine{to{background-position:250% 0}}
+#v-duo{position:fixed;inset:0;z-index:30;background:var(--bg);display:none;flex-direction:column;justify-content:space-between;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 8px) 8px calc(env(safe-area-inset-bottom,0px) + 8px)}
+#v-duo.on{display:flex}
+.dp{width:100%;max-width:560px;background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:10px 12px;transition:border-color .2s}
+.dp.act{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+#dp-b{transform:rotate(180deg)}
+.dp .top{display:flex;align-items:center;gap:10px}
+.dp .nm{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.15rem;flex:1;display:flex;align-items:center;gap:8px}
+.dp .nm .gl{font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;font-size:1.5rem;line-height:1}
+.dp .clk{font:700 1.35rem/1 Manrope,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:5px 10px;border-radius:8px;background:var(--surface2)}
+.dp.act .clk{background:var(--ink);color:var(--bg)}
+.dp .clk.low{background:var(--bad);color:#fff}
+.dp .st{font-weight:700;margin-top:6px}
+.dp .st.ok{color:var(--ok)}.dp .st.bad{color:var(--bad)}
+.dp .cap{font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;font-size:1.05rem;min-height:1.4em;color:var(--muted);margin-top:2px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.dp .cap b{font-family:Manrope,sans-serif;font-size:.85rem;color:var(--ink)}
+.dp .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.dp .btns .btn{padding:7px 11px;font-size:.85rem}
+.duo-boardwrap{width:min(100%,560px,calc(100vh - 340px));flex:none}
+@supports (height:100dvh){.duo-boardwrap{width:min(100%,560px,calc(100dvh - 340px))}}
+.duo-board .pc.b{transform:rotate(180deg) translateY(-2%)}
+#pp.flip .card{transform:rotate(180deg)}
+.skin-emperor .pc{-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;text-shadow:none}
+.skin-emperor .pc.w{background-image:linear-gradient(165deg,#fffdf6 0%,#f6e7bd 40%,#e2b65a 75%,#b8862b 100%);filter:drop-shadow(0 1px 0 #3b2a07) drop-shadow(0 -1px 0 #3b2a07) drop-shadow(1px 0 0 #3b2a07) drop-shadow(-1px 0 0 #3b2a07) drop-shadow(0 0 4px rgba(226,182,90,.55))}
+.skin-emperor .pc.b{background-image:linear-gradient(165deg,#5b7cf0 0%,#1f3389 45%,#0b1438 100%);filter:drop-shadow(0 1px 0 #e0b44a) drop-shadow(0 -1px 0 #e0b44a) drop-shadow(1px 0 0 #e0b44a) drop-shadow(-1px 0 0 #e0b44a) drop-shadow(0 0 4px rgba(80,110,240,.6))}
+.skin-emperor .pc::before{content:"";position:absolute;left:50%;top:-.19em;width:.62em;height:.29em;transform:translateX(-50%) rotate(-4deg);background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 46'%3E%3Cpath d='M3 38 C18 4 82 4 97 38 C70 27 30 27 3 38 Z' fill='%23121212' stroke='%23d9a520' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M14 31 C32 24 68 24 86 31' fill='none' stroke='%23d9a520' stroke-width='2'/%3E%3Ccircle cx='50' cy='19' r='8.5' fill='%23163a9a'/%3E%3Ccircle cx='50' cy='19' r='5.8' fill='%23ffffff'/%3E%3Ccircle cx='50' cy='19' r='3.1' fill='%23d81f2a'/%3E%3C/svg%3E") center/contain no-repeat;-webkit-text-fill-color:initial}
+.skin-emperor .pc.pk::before{top:-.14em}
+.skin-emperor .pc.pq::before{top:-.12em}
+.skin-emperor .pc.pb::before{top:-.13em;width:.52em}
+.skin-emperor .pc.pr::before{top:-.08em;width:.6em}
+.skin-emperor .pc.pn::before{top:-.13em;left:42%;width:.55em;transform:translateX(-50%) rotate(-12deg)}
+.skin-emperor .pc.pp::before{top:.07em;width:.5em;height:.24em}
+.gems{font-family:Fraunces,Georgia,serif;font-size:2.2rem;font-weight:700;line-height:1}
+.shop{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));margin-top:16px}
+.skin-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.skin-card.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold)}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);border-radius:8px;overflow:hidden;box-shadow:0 0 0 2px var(--frame)}
+.mini .sq{cursor:default;font-size:34px}
+.tier{font-size:.75rem;font-weight:700;color:var(--muted)}
+.pc.w{color:#FBFBF8;text-shadow:0 0 1px #1a2230,1px 1px 0 #1a2230,-1px -1px 0 #1a2230,1px -1px 0 #1a2230,-1px 1px 0 #1a2230,0 2px 2px rgba(0,0,0,.25)}
+.pc.b{color:#161C26;text-shadow:0 1px 0 rgba(255,255,255,.25)}
+[class*="skin-"]:not(.skin-classic) .pc{text-shadow:none}
+.coord{position:absolute;font:700 9px/1 Manrope,sans-serif;opacity:.7;pointer-events:none}
+.coord.f{right:3px;bottom:2px}.coord.r{left:3px;top:3px}
+.sq.l .coord{color:var(--sq-d)}.sq.d .coord{color:var(--sq-l)}
+.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+/* progress */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:640px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat b{display:block;font-family:Fraunces,Georgia,serif;font-size:1.8rem;line-height:1.1}
+.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:320px}
+.heat i{aspect-ratio:1;border-radius:5px;background:var(--surface2);border:1px solid var(--line)}
+.heat i.a1{background:var(--gold-soft);border-color:var(--gold-soft)}
+.heat i.a2{background:var(--gold);border-color:var(--gold)}
+.heat i.today{outline:2px solid var(--ink);outline-offset:1px}
+.ach{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.badge{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface)}
+.badge .gl{font-size:1.8rem;line-height:1;font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif}
+.badge b{display:block;margin-top:6px;font-size:.95rem}
+.badge.lock{opacity:.5}.badge.lock .gl{filter:grayscale(1)}
+.badge.got{border-color:var(--gold);background:var(--gold-soft)}
+.badge.got .gl{color:var(--gold-ink)}
+
+/* toast & promotion */
+#toasts{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:40;pointer-events:none}
+.toast{background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:20px;font-weight:700;font-size:.92rem;animation:tin .25s ease-out}
+.toast.xp{background:var(--gold);color:#1d1406}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}}
+#promo{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(10,15,22,.72);padding:20px}
+#promo.on{display:flex}
+#pp{position:fixed;inset:0;z-index:55;display:none;align-items:center;justify-content:center;background:rgba(10,15,22,.6);padding:20px}
+#pp.on{display:flex}
+#pp .card{background:var(--surface);border-radius:18px;padding:22px;text-align:center;max-width:360px;width:100%}
+.ppb{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ppb button{aspect-ratio:1/1;border:0;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;font-size:2.6rem;line-height:1;padding:4px 0}
+.ppb button:nth-child(odd){background:var(--sq-l)}.ppb button:nth-child(even){background:var(--sq-d)}
+.ppb button small{font:600 .68rem/1.2 Manrope,sans-serif;color:#142033;margin-top:4px}
+.ppb button:nth-child(even) small{color:#fff}
+#promo .card{background:var(--surface);border-radius:18px;padding:28px 26px;text-align:center;max-width:340px;width:100%}
+#promo .stage{position:relative;height:150px;font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;font-size:8rem;line-height:150px}
+#promo .old,#promo .new{position:absolute;inset:0}
+#promo .old{color:var(--muted);animation:out 1s ease-in forwards}
+#promo .new{color:var(--gold);opacity:0;animation:inn .9s .7s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes out{60%{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-60px) scale(.6)}}
+@keyframes inn{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;animation-delay:0s!important;transition:none!important}}
+.lesson-text p+p{margin-top:8px}
+.kbd{font-weight:700}
+.sync{font-size:.8rem;color:var(--muted)}
+.tech{margin-top:14px}
+details.mod{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 12px;margin-bottom:10px}
+details.mod>summary{list-style:none;display:flex;gap:12px;align-items:center;padding:10px 0;cursor:pointer}
+details.mod>summary::-webkit-details-marker{display:none}
+details.mod>summary .t{flex:1;min-width:0}details.mod>summary .t b{display:block}
+details.mod>summary .mn{font-family:Fraunces,Georgia,serif;font-weight:700;font-size:1.3rem;width:2rem;height:2rem;border-radius:50%;background:var(--gold-soft);color:var(--gold-ink);display:flex;align-items:center;justify-content:center;flex:none}
+details.mod[open]{padding-bottom:12px}
+details.mod .item{background:var(--surface2)}
+.tech .head{display:flex;gap:14px;align-items:flex-start}
+.tech .head .gl{font-family:"Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols 2",serif;font-size:2.4rem;line-height:1;color:var(--gold)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px}
+.tile{aspect-ratio:1/1;border:1px solid var(--line);background:var(--surface);border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0}
+.tile b{font-family:Fraunces,Georgia,serif;font-size:1.25rem;line-height:1}
+.tile span{font-size:.72rem;color:var(--muted);font-family:"Segoe UI Symbol","DejaVu Sans",Manrope,sans-serif}
+.tile.done{background:var(--ok-soft);border-color:var(--ok-soft)}.tile.done span{color:var(--ok)}
+.tile.clean{background:var(--gold-soft);border-color:var(--gold)}.tile.clean span{color:var(--gold-ink)}
+.tech .pz{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.tech .pz button{min-width:3rem}
+.tech .pz button.done{background:var(--ok-soft);color:var(--ok);border-color:var(--ok-soft)}
+.elo{font-family:Fraunces,Georgia,serif;font-size:2.2rem;font-weight:700;line-height:1}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;text-align:center;margin-bottom:14px}
+.vs .n{font-family:Fraunces,Georgia,serif;font-size:1.6rem;font-weight:700;line-height:1.1}
+</style>
+</head>
+<body>
+<div id="toasts" aria-live="polite"></div>
+
+<main>
+  <!-- HOME -->
+  <section class="view" id="v-home">
+    <div class="hero">
+      <div class="piece-big" id="h-piece" aria-hidden="true">♟&#xFE0E;</div>
+      <div>
+        <p class="muted" id="h-hello">Tavo rangas</p>
+        <div class="rankname" id="h-rank">Pėstininkas</div>
+        <div class="track" id="h-track"></div>
+        <div class="bar" aria-hidden="true"><i id="h-bar" style="width:0"></i></div>
+        <p class="small muted" style="margin-top:6px" id="h-next"></p>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel row" style="flex-wrap:nowrap">
+        <svg class="ring" viewBox="0 0 84 84" aria-hidden="true">
+          <circle cx="42" cy="42" r="34" fill="none" stroke="var(--line)" stroke-width="9"/>
+          <circle id="h-ring" cx="42" cy="42" r="34" fill="none" stroke="var(--gold)" stroke-width="9" stroke-linecap="round" stroke-dasharray="213.6" stroke-dashoffset="213.6" transform="rotate(-90 42 42)" style="transition:stroke-dashoffset .6s"/>
+          <text x="42" y="48" text-anchor="middle" font-family="Fraunces,Georgia,serif" font-weight="700" font-size="18" fill="var(--ink)" id="h-ringtxt">0</text>
+        </svg>
+        <div>
+          <h3>Dienos tikslas</h3>
+          <p class="small muted" id="h-goal"></p>
+        </div>
+      </div>
+      <div class="panel row" style="flex-wrap:nowrap">
+        <div style="font-size:2.6rem;line-height:1" aria-hidden="true">🔥</div>
+        <div>
+          <h3 id="h-streak">0 dienų serija</h3>
+          <p class="small muted" id="h-streaknote"></p>
+        </div>
+      </div>
+      <button class="panel row" id="h-elobox" style="flex-wrap:nowrap;text-align:left;cursor:pointer;font:inherit;color:inherit">
+        <div class="elo" id="h-elo">800</div>
+        <div>
+          <h3>Elo reitingas</h3>
+          <p class="small muted" id="h-elonote"></p>
+        </div>
+      </button>
+      <button class="panel row" id="h-gembox" style="flex-wrap:nowrap;text-align:left;cursor:pointer;font:inherit;color:inherit">
+        <div class="gems"><span id="h-gems">0</span><span aria-hidden="true" style="font-size:1.6rem"> 💎</span></div>
+        <div>
+          <h3>Deimantai</h3>
+          <p class="small muted" id="h-gemnote"></p>
+        </div>
+      </button>
+    </div>
+
+    <div class="sec">
+      <button class="bigbtn" id="h-continue"></button>
+    </div>
+
+    <div class="sec">
+      <h2>Naujausi apdovanojimai</h2>
+      <div class="ach" id="h-ach"></div>
+    </div>
+    <p class="sync" id="sync" style="margin-top:20px"></p>
+  </section>
+
+  <!-- LESSONS -->
+  <section class="view" id="v-lessons">
+    <h1>Pamokos</h1>
+    <p class="muted" style="margin:6px 0 16px">150 pamokų 16 skyrių: nuo figūrų ėjimų iki garsių atidarymų, spąstų, kombinacijų ir endšpilio. Kiekviena baigiasi užduotimi lentoje.</p>
+    <div class="list" id="l-list"></div>
+  </section>
+
+  <!-- TACTICS -->
+  <section class="view" id="v-tactics">
+    <h1>Gudrių ėjimų mokykla</h1>
+    <p class="muted" style="margin:6px 0 4px">Keturi taktiniai metodai, kuriais laimima medžiaga, ir 42 užduotys jiems įtvirtinti. Perskaityk paaiškinimą ir spręsk užduotis eilės tvarka.</p>
+    <div id="x-list"></div>
+  </section>
+
+  <!-- PUZZLES -->
+  <section class="view" id="v-puzzles">
+    <h1>Užduotys</h1>
+    <p class="muted" style="margin:6px 0 4px">Rask matą. Išspręsk iš pirmo karto be užuominos ir gausi papildomų XP.</p>
+    <div id="p-groups"></div>
+  </section>
+
+  <!-- TRAINER (lesson / puzzle) -->
+  <section class="view" id="v-trainer">
+    <button class="back" id="t-back">‹ Atgal</button>
+    <div class="trainer">
+      <div class="boardwrap"><div class="board" id="t-board" role="grid" aria-label="Šachmatų lenta"></div></div>
+      <div>
+        <p class="muted small" id="t-kicker"></p>
+        <h2 id="t-title" style="margin:2px 0 10px"></h2>
+        <div class="lesson-text" id="t-text"></div>
+        <div class="status" id="t-status" style="margin-top:14px" aria-live="polite"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="t-hint">Užuomina</button>
+          <button class="btn" id="t-reset">Iš naujo</button>
+          <button class="btn primary" id="t-next" disabled>Kita</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLAY -->
+  <section class="view" id="v-play">
+    <h1>Žaisk su robotu</h1>
+    <p class="muted" style="margin:6px 0 14px">Roboto stiprumas priklauso nuo tavo Elo reitingo. Laimėk ir reitingas kils, o kartu stiprės ir priešininkas.</p>
+    <div class="trainer">
+      <div class="boardwrap"><div class="board" id="g-board" role="grid" aria-label="Šachmatų lenta"></div></div>
+      <div>
+        <div class="vs panel">
+          <div><div class="n" id="g-me">800</div><span class="small muted">Tu</span></div>
+          <span class="muted">prieš</span>
+          <div><div class="n" id="g-bot">800</div><span class="small muted">Robotas</span></div>
+        </div>
+        <p class="small muted" style="margin-bottom:6px">Iššūkis</p>
+        <div class="seg" id="g-level">
+          <button data-v="-200" aria-pressed="false">Lengvesnis</button><button data-v="0" aria-pressed="true">Lygus</button><button data-v="200" aria-pressed="false">Stipresnis</button>
+        </div>
+        <p class="small muted" style="margin-top:6px" id="g-levelnote"></p>
+        <p class="small muted" style="margin:12px 0 6px">Tavo spalva</p>
+        <div class="seg" id="g-color">
+          <button data-v="w" aria-pressed="true">Baltos</button><button data-v="b" aria-pressed="false">Juodos</button>
+        </div>
+        <div class="status" id="g-status" style="margin-top:16px" aria-live="polite">Paspausk „Nauja partija“.</div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn primary" id="g-new">Nauja partija</button>
+          <button class="btn" id="g-resign" disabled>Pasiduoti</button>
+        </div>
+        <p class="small muted" style="margin-top:14px" id="g-record"></p>
+        <div class="panel row" style="margin-top:12px;justify-content:space-between">
+          <span><b id="g-gems">0</b> 💎 <span class="small muted">(už pergalę +10 💎)</span></span>
+          <button class="btn gold" id="g-shop">Figūrų parduotuvė</button>
+        </div>
+        <div class="panel" style="margin-top:12px">
+          <h3>Žaisti dviese prie vieno telefono</h3>
+          <p class="small muted" style="margin:4px 0 10px">Padėk telefoną ant stalo tarp dviejų žaidėjų. Juodosios figūros ir juodųjų skydelis apversti, todėl priešininkas viską mato iš savo pusės.</p>
+          <p class="small muted" style="margin-bottom:6px">Laikrodis kiekvienam žaidėjui</p>
+          <div class="seg" id="d-time"><button data-v="0" aria-pressed="true">Be laiko</button><button data-v="5" aria-pressed="false">5 min</button><button data-v="10" aria-pressed="false">10 min</button><button data-v="15" aria-pressed="false">15 min</button></div>
+          <button class="btn primary" id="d-start" style="display:block;margin-top:12px">Pradėti partiją dviese</button>
+          <p class="small muted" style="margin-top:8px">Šios partijos nekeičia Elo ir neduoda deimantų.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section class="view" id="v-shop">
+    <button class="back" id="sh-back">‹ Atgal</button>
+    <div class="row" style="justify-content:space-between;align-items:flex-end">
+      <div><h1>Figūrų parduotuvė</h1><p class="muted" style="margin-top:6px">Kiekviena pergalė prieš robotą atneša 10 deimantų. Kuo gražesnės figūros, tuo brangesnės.</p></div>
+      <div class="gems"><span id="sh-gems">0</span> 💎</div>
+    </div>
+    <div class="shop" id="sh-list"></div>
+  </section>
+
+  <section class="view" id="v-progress">
+    <h1>Progresas</h1>
+    <div class="stats" style="margin-top:16px" id="s-stats"></div>
+
+    <div class="sec">
+      <h2>Elo reitingo kelias</h2>
+      <div class="panel" style="overflow-x:auto"><svg id="s-elo" viewBox="0 0 560 190" style="width:100%;min-width:420px;height:auto" role="img" aria-label="Elo reitingo pokytis"></svg></div>
+    </div>
+
+    <div class="sec">
+      <h2>XP per 14 dienų</h2>
+      <div class="panel" style="overflow-x:auto"><svg id="s-chart" viewBox="0 0 560 190" style="width:100%;min-width:420px;height:auto" role="img" aria-label="XP per paskutines 14 dienų"></svg></div>
+    </div>
+
+    <div class="sec grid2">
+      <div>
+        <h2>Paskutinės 4 savaitės</h2>
+        <div class="heat" id="s-heat" style="margin-top:4px"></div>
+        <p class="small muted" style="margin-top:8px">Šviesus langelis – mokeisi, sodrus – pasiekei dienos tikslą.</p>
+      </div>
+      <div>
+        <h2>Dienos tikslas</h2>
+        <p class="muted small" style="margin:4px 0 10px">Kiek XP nori surinkti kasdien?</p>
+        <div class="seg" id="s-goal">
+          <button data-v="30" aria-pressed="false">30 XP</button><button data-v="50" aria-pressed="true">50 XP</button><button data-v="100" aria-pressed="false">100 XP</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Apdovanojimai</h2>
+      <div class="ach" id="s-ach"></div>
+    </div>
+
+    <div class="sec">
+      <button class="btn" id="s-reset">Ištrinti visą progresą</button>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Skiltys"><div class="in">
+  <button data-go="home"><span class="g">♚&#xFE0E;</span>Šiandien</button>
+  <button data-go="lessons"><span class="g">♟&#xFE0E;</span>Pamokos</button>
+  <button data-go="tactics"><span class="g">♞&#xFE0E;</span>Taktika</button>
+  <button data-go="puzzles"><span class="g">♛&#xFE0E;</span>Užduotys</button>
+  <button data-go="play"><span class="g">♜&#xFE0E;</span>Žaisti</button>
+  <button data-go="progress"><span class="g">♝&#xFE0E;</span>Progresas</button>
+</div></nav>
+
+<div id="v-duo" role="dialog" aria-label="Partija dviese">
+  <div class="dp" id="dp-b"></div>
+  <div class="duo-boardwrap"><div class="board" id="d-board" role="grid" aria-label="Šachmatų lenta dviem žaidėjams"></div></div>
+  <div class="dp" id="dp-w"></div>
+</div>
+
+<div id="pp" role="dialog" aria-modal="true" aria-labelledby="pp-t">
+  <div class="card">
+    <h2 id="pp-t">Kuo virs pėstininkas?</h2>
+    <p class="small muted" style="margin:6px 0 14px">Pasirink figūrą. Dažniausiai renkamasi valdovė, bet kartais žirgas paskelbia matą ar šakutę.</p>
+    <div class="ppb" id="pp-b"></div>
+    <button class="btn" id="pp-x" style="margin-top:14px">Atšaukti ėjimą</button>
+  </div>
+</div>
+
+<div id="promo" role="dialog" aria-modal="true" aria-labelledby="promo-t">
+  <div class="card">
+    <div class="stage"><span class="old" id="promo-old"></span><span class="new" id="promo-new"></span></div>
+    <h2 id="promo-t">Paaukštinimas!</h2>
+    <p class="muted" id="promo-p" style="margin:8px 0 18px"></p>
+    <button class="btn gold" id="promo-ok">Puiku, tęsiam</button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const VS="\uFE0E";
+const GL={k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"};
+const g=s=>s+VS;
+const $=id=>document.getElementById(id);
+if(typeof Chess==="undefined"){document.querySelector("main").innerHTML='<div class="panel"><h2>Nepavyko įkelti šachmatų variklio</h2><p class="muted" style="margin-top:8px">Patikrink interneto ryšį ir atnaujink puslapį.</p></div>';return}
+
+/* ---------- content ---------- */
+const RANKS=[
+ {n:"Pėstininkas",gen:"pėstininko",g:"♟",xp:0},
+ {n:"Žirgas",gen:"žirgo",g:"♞",xp:5000},
+ {n:"Rikis",gen:"rikio",g:"♝",xp:12500},
+ {n:"Bokštas",gen:"bokšto",g:"♜",xp:22500},
+ {n:"Valdovė",gen:"valdovės",g:"♛",xp:35000},
+ {n:"Karalius",gen:"karaliaus",g:"♚",xp:50000}
+];
+const LESSONS=[
+ {id:"l1",g:"♟",t:"Pėstininkas",fen:"4k3/8/8/3p4/4P3/8/8/4K3 w - - 0 1",goal:[["e4","d5"]],
+  txt:["Pėstininkas eina tik į priekį po vieną langelį. Iš pradinės padėties jis gali peršokti iš karto du langelius.","Kerta jis kitaip nei eina: vienu langeliu įstrižai į priekį."],task:"Nukirsk juodąjį pėstininką."},
+ {id:"l2",g:"♞",t:"Žirgas",fen:"4k3/8/8/8/3r4/8/4N3/4K3 w - - 0 1",goal:[["e2","d4"]],
+  txt:["Žirgas juda raide „L“: du langelius viena kryptimi ir vieną į šoną.","Tai vienintelė figūra, galinti peršokti per kitas."],task:"Nukirsk juodąjį bokštą žirgu."},
+ {id:"l3",g:"♝",t:"Rikis",fen:"4k3/8/7r/8/8/8/8/2B1K3 w - - 0 1",goal:[["c1","h6"]],
+  txt:["Rikis eina įstrižainėmis kiek nori langelių, kol neužstoja kita figūra.","Jis visada lieka tos pačios spalvos langeliuose, kuriuose pradėjo."],task:"Rikiu nukirsk bokštą."},
+ {id:"l4",g:"♜",t:"Bokštas",fen:"4k3/8/8/8/8/8/R5n1/2K5 w - - 0 1",goal:[["a2","g2"]],
+  txt:["Bokštas eina tiesiai: horizontaliai ir vertikaliai, bet kokiu atstumu.","Du bokštai kartu yra beveik tokie pat stiprūs kaip valdovė."],task:"Bokštu nukirsk žirgą."},
+ {id:"l5",g:"♛",t:"Valdovė",fen:"4k3/8/8/1b6/8/8/8/1Q2K3 w - - 0 1",goal:[["b1","b5"]],
+  txt:["Valdovė sujungia bokšto ir rikio galias: eina tiesiai ir įstrižai bet kokiu atstumu.","Tai stipriausia figūra, todėl saugok ją ir nepaleisk be reikalo į priekį."],task:"Valdove nukirsk rikį."},
+ {id:"l6",g:"♚",t:"Karalius",fen:"4k3/8/8/8/8/8/3pK3/8 w - - 0 1",goal:[["e2","d2"]],
+  txt:["Karalius eina vienu langeliu bet kuria kryptimi.","Jis niekada negali stoti į langelį, kurį puola priešininkas."],task:"Karaliumi nukirsk pėstininką."},
+ {id:"l7",g:"♚",t:"Šachas ir matas",fen:"6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1",goal:"mate",
+  txt:["Šachas – kai karalius puolamas. Į šachą privaloma atsakyti: pasitraukti, uždengti arba nukirsti puolančią figūrą.","Matas – šachas, nuo kurio nėra išsigelbėjimo. Tada partija baigta."],task:"Paskelbk matą vienu ėjimu."},
+ {id:"l8",g:"♜",t:"Rokiruotė",fen:"4k3/8/8/8/8/8/8/4K2R w K - 0 1",goal:[["e1","g1"]],
+  txt:["Rokiruotė – ypatingas ėjimas: karalius pereina du langelius bokšto link, o bokštas peršoka per jį.","Galima tik jei nei karalius, nei bokštas dar nėjo, tarp jų tuščia ir karalius nėra po šachu."],task:"Paliesk karalių ir perkelk jį į g1."},
+ {id:"l9",g:"♛",t:"Pėstininko virsmas",fen:"4k3/P7/8/8/8/8/8/4K3 w - - 0 1",goal:[["a7","a8"]],
+  txt:["Pėstininkas, pasiekęs paskutinę eilę, virsta bet kuria figūra, išskyrus karalių.","Pasiekus paskutinę eilę atsiras langas, kuriame pasirinksi figūrą. Dažniausiai renkamasi valdovė, nes ji stipriausia."],task:"Nuvesk pėstininką į a8 ir pasirink figūrą."},
+ {id:"l10",g:"♟",t:"Kirtimas praeinant",fen:"4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1",goal:[["e5","d6"]],
+  txt:["Jei priešininko pėstininkas peršoko du langelius ir atsistojo šalia tavo pėstininko, gali jį nukirsti taip, lyg jis būtų paėjęs vieną.","Tai leidžiama tik iš karto, kitu ėjimu."],task:"Juodieji ką tik paėjo d7–d5. Nukirsk praeinant."},
+ {"id": "l11", "m": 1, "g": "♜", "t": "Langelių vardai", "fen": "4k3/8/8/8/R7/8/8/6K1 w - - 0 1", "goal": [["a4", "d4"]], "txt": ["Vertikalės žymimos raidėmis nuo a iki h, horizontalės – skaičiais nuo 1 iki 8. Kiekvienas langelis turi vardą, pavyzdžiui, d4.", "Lentos kampai būna a1, h1, a8 ir h8. Baltųjų pusėje visada pirmoji horizontalė."], "task": "Perkelk bokštą į langelį d4."},
+ {"id": "l12", "m": 1, "g": "♞", "t": "Ėjimų užrašymas", "fen": "4k3/8/8/8/3N4/8/8/6K1 w - - 0 1", "goal": [["d4", "f5"]], "txt": ["Partija užrašoma ėjimais: kuri figūra ir į kurį langelį eina. Taip galima vėliau peržiūrėti partiją ir rasti klaidas.", "Kirtimas žymimas ženklu x, šachas – pliusu, matas – grotelėmis."], "task": "Nuvesk žirgą į langelį f5."},
+ {"id": "l13", "m": 1, "g": "♛", "t": "Figūrų vertė", "fen": "4k3/8/2p1r3/8/3N4/8/8/6K1 w - - 0 1", "goal": [["d4", "e6"]], "txt": ["Apytikslė vertė: pėstininkas – 1, žirgas ir rikis – po 3, bokštas – 5, valdovė – 9 taškai. Karalius neįkainojamas.", "Rinkdamasis, ką kirsti, pirmiausia ieškok vertingiausios nesaugomos figūros."], "task": "Žirgas gali kirsti pėstininką arba bokštą. Rinkis vertingesnį."},
+ {"id": "l14", "m": 1, "g": "♛", "t": "Saugoma ir nesaugoma figūra", "fen": "6k1/8/8/2p5/n2p4/8/8/3Q2K1 w - - 0 1", "goal": [["d1", "b3"], ["d1", "a4"]], "txt": ["Figūra saugoma, jei priešininkas gali atkirsti. Kirsdamas saugomą pėstininką valdove, prarastum 9 taškus už 1.", "Visada patikrink, ar langelis, į kurį eini, nėra puolamas."], "task": "Laimėk medžiagą ir nepakišk valdovės."},
+ {"id": "l15", "m": 1, "g": "♟", "t": "Treniruotė: nesaugoma figūra 1", "fen": "8/8/2k2N1R/2p3Pq/8/2K5/8/8 w - - 0 1", "goal": [["f6", "h5"], ["h6", "h5"]], "txt": ["Prieš kiekvieną ėjimą peržvelk, kurios priešininko figūros neapsaugotos. Tai lengviausias būdas laimėti medžiagą."], "task": "Rask ir nukirsk nesaugomą figūrą."},
+ {"id": "l16", "m": 1, "g": "♟", "t": "Treniruotė: nesaugoma figūra 2", "fen": "8/2k1r3/8/2n5/8/1P4Rb/8/1K4R1 w - - 0 1", "goal": [["g3", "h3"]], "txt": ["Prieš kiekvieną ėjimą peržvelk, kurios priešininko figūros neapsaugotos. Tai lengviausias būdas laimėti medžiagą."], "task": "Rask ir nukirsk nesaugomą figūrą."},
+ {"id": "l17", "m": 1, "g": "♟", "t": "Treniruotė: nesaugoma figūra 3", "fen": "6k1/8/3p4/8/5N2/3b4/7K/8 w - - 0 1", "goal": [["f4", "d3"]], "txt": ["Prieš kiekvieną ėjimą peržvelk, kurios priešininko figūros neapsaugotos. Tai lengviausias būdas laimėti medžiagą."], "task": "Rask ir nukirsk nesaugomą figūrą."},
+ {"id": "l18", "m": 1, "g": "♟", "t": "Treniruotė: nesaugoma figūra 4", "fen": "8/8/2R5/1k6/5b1p/5K2/2b5/1N3N2 w - - 0 1", "goal": [["c6", "c2"]], "txt": ["Prieš kiekvieną ėjimą peržvelk, kurios priešininko figūros neapsaugotos. Tai lengviausias būdas laimėti medžiagą."], "task": "Rask ir nukirsk nesaugomą figūrą."},
+ {"id": "l19", "m": 1, "g": "♟", "t": "Treniruotė: nesaugoma figūra 5", "fen": "8/8/5p2/4k3/8/3Q3q/2K5/8 w - - 0 1", "goal": [["d3", "h3"]], "txt": ["Prieš kiekvieną ėjimą peržvelk, kurios priešininko figūros neapsaugotos. Tai lengviausias būdas laimėti medžiagą."], "task": "Rask ir nukirsk nesaugomą figūrą."},
+ {"id": "l20", "m": 2, "g": "♚", "t": "Pasitrauk iš šacho", "fen": "4r1k1/8/8/8/8/8/8/4K3 w - - 0 1", "goal": [["e1", "d2"], ["e1", "f2"], ["e1", "f1"], ["e1", "d1"]], "txt": ["Į šachą privaloma atsakyti iš karto. Pirmas būdas – patraukti karalių į saugų langelį.", "Karalius negali likti toje pačioje linijoje, kurią puola bokštas."], "task": "Patrauk karalių iš šacho."},
+ {"id": "l21", "m": 2, "g": "♝", "t": "Uždenk šachą", "fen": "4r1k1/8/8/8/8/8/3P1P2/3QKB2 w - - 0 1", "goal": [["d1", "e2"], ["f1", "e2"]], "txt": ["Antras būdas – pastatyti savo figūrą tarp karaliaus ir puolančios figūros.", "Uždengti galima tik nuo toli puolančių figūrų: bokšto, rikio ar valdovės."], "task": "Karalius neturi kur trauktis. Uždenk jį."},
+ {"id": "l22", "m": 2, "g": "♞", "t": "Nukirsk puolančią figūrą", "fen": "4k3/8/8/8/1B6/8/3q4/4K3 w - - 0 1", "goal": [["b4", "d2"], ["e1", "d2"]], "txt": ["Trečias būdas – nukirsti šachą skelbiančią figūrą. Dažnai tai pats geriausias atsakymas, nes dar ir laimi medžiagą.", "Karalius gali kirsti tik nesaugomą figūrą."], "task": "Atsakyk į šachą taip, kad laimėtum valdovę."},
+ {"id": "l23", "m": 2, "g": "♚", "t": "Kuris būdas geriausias?", "fen": "8/8/8/1r2kP2/1K6/N7/8/8 w - - 0 1", "goal": [["b4", "b5"], ["a3", "b5"]], "txt": ["Kai yra keli būdai gintis, palygink juos. Kartais trauktis saugiau, o kartais kirsti naudingiau."], "task": "Apsiginti nuo šacho geriausiu būdu."},
+ {"id": "l24", "m": 2, "g": "♚", "t": "Treniruotė: šachas 1", "fen": "8/8/8/8/1k6/6p1/5K1R/8 w - - 0 1", "goal": [["f2", "g3"]], "txt": ["Peržiūrėk visus tris būdus: pasitraukti, uždengti, nukirsti. Rinkis tą, po kurio neprarasi medžiagos."], "task": "Apsiginti nuo šacho geriausiu būdu."},
+ {"id": "l25", "m": 2, "g": "♚", "t": "Treniruotė: šachas 2", "fen": "2k5/8/8/8/4q3/5K2/8/7R w - - 0 1", "goal": [["f3", "e4"]], "txt": ["Peržiūrėk visus tris būdus: pasitraukti, uždengti, nukirsti. Rinkis tą, po kurio neprarasi medžiagos."], "task": "Apsiginti nuo šacho geriausiu būdu."},
+ {"id": "l26", "m": 2, "g": "♚", "t": "Treniruotė: šachas 3", "fen": "8/8/8/8/k5pp/2Qr4/3K4/8 w - - 0 1", "goal": [["c3", "d3"], ["d2", "d3"]], "txt": ["Peržiūrėk visus tris būdus: pasitraukti, uždengti, nukirsti. Rinkis tą, po kurio neprarasi medžiagos."], "task": "Apsiginti nuo šacho geriausiu būdu."},
+ {"id": "l27", "m": 2, "g": "♚", "t": "Treniruotė: šachas 4", "fen": "1k6/8/7N/8/8/5r2/5K2/8 w - - 0 1", "goal": [["f2", "f3"]], "txt": ["Peržiūrėk visus tris būdus: pasitraukti, uždengti, nukirsti. Rinkis tą, po kurio neprarasi medžiagos."], "task": "Apsiginti nuo šacho geriausiu būdu."},
+ {"id": "l28", "m": 2, "g": "♚", "t": "Treniruotė: šachas 5", "fen": "8/4k3/1b6/2P5/8/4K3/5q2/1Q6 w - - 0 1", "goal": [["e3", "f2"]], "txt": ["Peržiūrėk visus tris būdus: pasitraukti, uždengti, nukirsti. Rinkis tą, po kurio neprarasi medžiagos."], "task": "Apsiginti nuo šacho geriausiu būdu."},
+ {"id": "l29", "m": 3, "g": "♚", "t": "Laiptelių matas", "fen": "6k1/R7/8/8/8/8/8/1R4K1 w - - 0 1", "goal": "mate", "txt": ["Du bokštai nuvaro karalių į kraštą: vienas uždaro horizontalę, kitas skelbia šachą.", "Įsimink šį vaizdą: partijose jis kartojasi dažniau, nei atrodo."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l30", "m": 3, "g": "♚", "t": "Valdovė ir karalius", "fen": "4k3/8/4K3/8/8/8/8/7Q w - - 0 1", "goal": "mate", "txt": ["Kai karaliai stovi priešais vienas kitą, valdovė gali paskelbti matą kraštinėje horizontalėje.", "Įsimink šį vaizdą: partijose jis kartojasi dažniau, nei atrodo."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l31", "m": 3, "g": "♚", "t": "Bokštas ir karalius", "fen": "k7/8/1K6/8/8/8/8/7R w - - 0 1", "goal": "mate", "txt": ["Karalius atima pabėgimo langelius, o bokštas skelbia šachą per visą horizontalę.", "Įsimink šį vaizdą: partijose jis kartojasi dažniau, nei atrodo."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l32", "m": 3, "g": "♚", "t": "Bučinio matas", "fen": "3k4/8/3K4/8/8/8/8/6Q1 w - - 0 1", "goal": "mate", "txt": ["Kartais užtenka valdovės šacho iš toli, kai karalius jau užspaustas savo karaliaus.", "Įsimink šį vaizdą: partijose jis kartojasi dažniau, nei atrodo."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l33", "m": 3, "g": "♚", "t": "Uždusinimas", "fen": "6rk/6pp/8/4N3/8/8/8/6K1 w - - 0 1", "goal": "mate", "txt": ["Karalių užblokuoja jo paties figūros, o žirgas, šokantis per jas, paskelbia matą.", "Įsimink šį vaizdą: partijose jis kartojasi dažniau, nei atrodo."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l34", "m": 3, "g": "♚", "t": "Anastasijos matas", "fen": "5r2/4Nppk/8/8/8/3R4/8/6K1 w - - 0 1", "goal": "mate", "txt": ["Žirgas uždaro pabėgimo langelius, o bokštas paskelbia matą išilgai krašto.", "Įsimink šį vaizdą: partijose jis kartojasi dažniau, nei atrodo."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l35", "m": 3, "g": "♚", "t": "Arabų matas", "fen": "7k/R7/5N2/8/8/8/8/6K1 w - - 0 1", "goal": "mate", "txt": ["Žirgas saugo bokštą ir kartu dengia langelį, į kurį karalius galėtų bėgti.", "Įsimink šį vaizdą: partijose jis kartojasi dažniau, nei atrodo."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l36", "m": 3, "g": "♚", "t": "Epauletų matas", "fen": "3rkr2/8/8/8/8/8/Q7/4K3 w - - 0 1", "goal": "mate", "txt": ["Karaliaus šonuose stovi jo paties bokštai, tarsi antpečiai. Užtenka vieno šacho iš priekio.", "Įsimink šį vaizdą: partijose jis kartojasi dažniau, nei atrodo."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l37", "m": 3, "g": "♚", "t": "Paskutinės eilės matas", "fen": "6k1/5ppp/8/8/8/8/5PPP/2Q3K1 w - - 0 1", "goal": "mate", "txt": ["Karalius už savo pėstininkų yra saugus, kol paskutinė horizontalė neatvira. Tai viena dažniausių klaidų partijose.", "Įsimink šį vaizdą: partijose jis kartojasi dažniau, nei atrodo."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l38", "m": 4, "g": "♙", "t": "Užimk centrą", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "goal": [["e2", "e4"], ["d2", "d4"]], "txt": ["Keturi centriniai langeliai – d4, e4, d5 ir e5. Figūros centre kontroliuoja daugiausiai langelių.", "Dažniausias pirmas ėjimas – pėstininkas į centrą dviem langeliais."], "task": "Paėk pėstininku į centrą."},
+ {"id": "l39", "m": 4, "g": "♟", "t": "Atsakyk centre", "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1", "goal": [["e7", "e5"], ["d7", "d5"], ["c7", "c5"]], "txt": ["Juodieji irgi kovoja dėl centro. Jei nesirūpinsi centru, baltieji jį užims visą.", "Klasikiniai atsakymai į 1.e4 – e5, d5 arba c5."], "task": "Juodieji: atsakyk kova dėl centro."},
+ {"id": "l40", "m": 4, "g": "♞", "t": "Išvesk žirgus", "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2", "goal": [["g1", "f3"], ["b1", "c3"]], "txt": ["Žirgai iš pradinės padėties kontroliuoja mažai langelių. Išvesti link centro jie tampa daug stipresni.", "Žirgas f3 dar ir puola juodųjų pėstininką e5."], "task": "Išvesk žirgą link centro."},
+ {"id": "l41", "m": 4, "g": "♝", "t": "Išvesk rikius", "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", "goal": [["f1", "c4"], ["f1", "b5"]], "txt": ["Po žirgų ateina rikių eilė. Rikis c4 taiko į silpniausią juodųjų langelį f7, o rikis b5 spaudžia žirgą c6.", "Išvedus rikį, kelias rokiruotei atviras."], "task": "Išvesk rikį į aktyvią įstrižainę."},
+ {"id": "l42", "m": 4, "g": "♜", "t": "Laiku rokiruok", "fen": "r1bqk2r/ppp2ppp/2np1n2/2b1p3/2B1P3/2PP1N2/PP3PPP/RNBQK2R w KQkq - 0 6", "goal": [["e1", "g1"]], "txt": ["Karalius centre – lengvas taikinys. Rokiruotė paslepia jį už pėstininkų ir atveda bokštą į žaidimą.", "Stenkis rokiruoti per pirmus 10 ėjimų."], "task": "Atlik rokiruotę."},
+ {"id": "l43", "m": 4, "g": "♛", "t": "Ginkis nuo vaikų mato", "fen": "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 3 3", "goal": [["g7", "g6"]], "txt": ["Valdovė h5 ir rikis c4 kartu puola f7. Jei nesiginsi, gresia matas Qxf7.", "Geriausia – pėstininku g6 nuvaryti valdovę ir uždaryti jai kelią į f7."], "task": "Juodieji: apsaugok f7 ir nepraraskite medžiagos."},
+ {"id": "l44", "m": 4, "g": "♞", "t": "Neleisk žirgui į f7", "fen": "r1bqkb1r/pppp1ppp/2n2n2/4p1N1/2B1P3/8/PPPP1PPP/RNBQK2R b KQkq - 5 4", "goal": [["d7", "d5"]], "txt": ["Žirgas g5 ir rikis c4 kartu puola f7. Kirtimas Nxf7 pultų valdovę ir bokštą.", "Geriausias atsakymas – uždaryti rikio įstrižainę pėstininku."], "task": "Juodieji: uždaryk rikio c4 įstrižainę."},
+ {"id": "l45", "m": 4, "g": "♜", "t": "Rokiruotė juodaisiais", "fen": "r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQ1RK1 b kq - 0 5", "goal": [["e8", "g8"]], "txt": ["Juodiesiems galioja tos pačios taisyklės: išvesk figūras ir paslėpk karalių.", "Rokiruotė trumpąja puse paprastai greičiausia."], "task": "Juodieji: atlik rokiruotę."},
+ {"id": "l46", "m": 4, "g": "♙", "t": "Išlaikyk centrą", "fen": "rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq c3 0 2", "goal": [["e7", "e6"], ["c7", "c6"]], "txt": ["Valdovės gambite baltieji siūlo pėstininką c4, kad atitrauktų juodųjų pėstininką nuo centro.", "Patikimiausia – paremti d5 pėstininku e6 arba c6."], "task": "Juodieji: paremk pėstininką d5."},
+ {"id": "l47", "m": 5, "g": "♞", "t": "Žirgo šakutė", "fen": "8/4N1p1/8/8/B6k/6b1/3K1B2/8 w - - 0 1", "goal": {"ok": ["e7f5"], "gain": 300}, "txt": ["Žirgas puola langelius, kurių kitos figūros nepuola, todėl jo šakutės ypač klastingos.", "Ieškok langelio, iš kurio žirgas pultų karalių ir dar vieną figūrą."], "task": "Rask žirgo šakutę ir laimėk medžiagą."},
+ {"id": "l48", "m": 5, "g": "♞", "t": "Žirgo šakutė 2", "fen": "8/8/1p2q3/3k4/Pp6/3N4/1KPN4/3b4 w - - 0 1", "goal": {"ok": ["d3f4"], "gain": 550}, "txt": ["Žirgas puola langelius, kurių kitos figūros nepuola, todėl jo šakutės ypač klastingos.", "Ieškok langelio, iš kurio žirgas pultų karalių ir dar vieną figūrą."], "task": "Rask žirgo šakutę ir laimėk medžiagą."},
+ {"id": "l49", "m": 5, "g": "♞", "t": "Žirgo šakutė 3", "fen": "8/1p3pB1/4N3/3k3b/8/8/8/6K1 w - - 0 1", "goal": {"ok": ["e6f4"], "gain": 300}, "txt": ["Žirgas puola langelius, kurių kitos figūros nepuola, todėl jo šakutės ypač klastingos.", "Ieškok langelio, iš kurio žirgas pultų karalių ir dar vieną figūrą."], "task": "Rask žirgo šakutę ir laimėk medžiagą."},
+ {"id": "l50", "m": 5, "g": "♛", "t": "Valdovės dviguba ataka", "fen": "4r3/k3P3/8/8/2p5/1Q6/1K6/8 w - - 0 1", "goal": {"ok": ["b3a4"], "gain": 450}, "txt": ["Valdovė puola į aštuonias puses, todėl gali vienu metu pulti kelias figūras.", "Dažniausiai dviguba ataka būna su šachu."], "task": "Pulk dvi figūras iš karto."},
+ {"id": "l51", "m": 5, "g": "♛", "t": "Valdovės dviguba ataka 2", "fen": "8/3r4/7p/k7/3P2K1/5Q2/8/8 w - - 0 1", "goal": {"ok": ["f3f5"], "gain": 450}, "txt": ["Valdovė puola į aštuonias puses, todėl gali vienu metu pulti kelias figūras.", "Dažniausiai dviguba ataka būna su šachu."], "task": "Pulk dvi figūras iš karto."},
+ {"id": "l52", "m": 5, "g": "♟", "t": "Treniruotė: šakutė 1", "fen": "5b2/7P/3k4/8/8/3K4/7b/8 w - - 0 1", "goal": {"ok": ["h7h8", "h7h8"], "gain": 750}, "txt": ["Šakutę gali padaryti bet kuri figūra. Pirmiausia ieškok nesaugomų figūrų ir karaliaus."], "task": "Rask šakutę ir laimėk medžiagą."},
+ {"id": "l53", "m": 5, "g": "♟", "t": "Treniruotė: šakutė 2", "fen": "7r/8/7B/4k3/1pPR2P1/8/8/4K3 w - - 0 1", "goal": {"ok": ["h6g7"], "gain": 450}, "txt": ["Šakutę gali padaryti bet kuri figūra. Pirmiausia ieškok nesaugomų figūrų ir karaliaus."], "task": "Rask šakutę ir laimėk medžiagą."},
+ {"id": "l54", "m": 5, "g": "♟", "t": "Treniruotė: šakutė 3", "fen": "b7/5R2/8/k1p1n3/P5pK/8/3P4/8 w - - 0 1", "goal": {"ok": ["f7a7"], "gain": 300}, "txt": ["Šakutę gali padaryti bet kuri figūra. Pirmiausia ieškok nesaugomų figūrų ir karaliaus."], "task": "Rask šakutę ir laimėk medžiagą."},
+ {"id": "l55", "m": 5, "g": "♟", "t": "Treniruotė: šakutė 4", "fen": "8/5pp1/8/k2n4/6P1/2R5/2P5/5K2 w - - 0 1", "goal": {"ok": ["c3c5"], "gain": 300}, "txt": ["Šakutę gali padaryti bet kuri figūra. Pirmiausia ieškok nesaugomų figūrų ir karaliaus."], "task": "Rask šakutę ir laimėk medžiagą."},
+ {"id": "l56", "m": 6, "g": "♝", "t": "Surišimas 1", "fen": "8/8/8/8/3k4/4r1P1/3K4/7Q w - - 0 1", "goal": {"ok": ["h1g1"], "gain": 450}, "txt": ["Surišta figūra negali pasitraukti, nes atidengtų karalių. Ją galima pulti dar kartą arba tiesiog laimėti.", "Toli einančios figūros – bokštas, rikis ir valdovė – yra surišimų meistrės."], "task": "Suriš figūrą ir laimėk medžiagą."},
+ {"id": "l57", "m": 6, "g": "♝", "t": "Surišimas 2", "fen": "8/1p6/k2b4/5p2/7R/8/6K1/8 w - - 0 1", "goal": {"ok": ["h4h6"], "gain": 300}, "txt": ["Surišta figūra negali pasitraukti, nes atidengtų karalių. Ją galima pulti dar kartą arba tiesiog laimėti.", "Toli einančios figūros – bokštas, rikis ir valdovė – yra surišimų meistrės."], "task": "Suriš figūrą ir laimėk medžiagą."},
+ {"id": "l58", "m": 6, "g": "♜", "t": "Kiaurinis smūgis", "fen": "8/8/7R/Q1p5/4kP2/8/4q1PK/8 w - - 0 1", "goal": {"ok": ["h6e6"], "gain": 350}, "txt": ["Skelbk šachą taip, kad už karaliaus toje pačioje linijoje stovėtų brangi figūra.", "Karaliui pasitraukus, linija atsiveria ir figūra krenta."], "task": "Rask kiaurinį smūgį."},
+ {"id": "l59", "m": 6, "g": "♜", "t": "Treniruotė: kiaurinis smūgis 1", "fen": "q4k2/2p4R/8/8/3K4/3N4/8/8 w - - 0 1", "goal": {"ok": ["h7h8"], "gain": 850}, "txt": ["Skelbk šachą taip, kad už karaliaus toje pačioje linijoje stovėtų brangi figūra.", "Karaliui pasitraukus, linija atsiveria ir figūra krenta."], "task": "Rask kiaurinį smūgį."},
+ {"id": "l60", "m": 6, "g": "♜", "t": "Treniruotė: kiaurinis smūgis 2", "fen": "q2k4/7Q/1p6/8/8/3P4/1K6/N7 w - - 0 1", "goal": {"ok": ["h7g8", "h7h8"], "gain": 850}, "txt": ["Skelbk šachą taip, kad už karaliaus toje pačioje linijoje stovėtų brangi figūra.", "Karaliui pasitraukus, linija atsiveria ir figūra krenta."], "task": "Rask kiaurinį smūgį."},
+ {"id": "l61", "m": 6, "g": "♜", "t": "Treniruotė: kiaurinis smūgis 3", "fen": "8/8/4k2n/8/8/7K/1R6/8 w - - 0 1", "goal": {"ok": ["b2b6"], "gain": 300}, "txt": ["Skelbk šachą taip, kad už karaliaus toje pačioje linijoje stovėtų brangi figūra.", "Karaliui pasitraukus, linija atsiveria ir figūra krenta."], "task": "Rask kiaurinį smūgį."},
+ {"id": "l62", "m": 6, "g": "♜", "t": "Treniruotė: kiaurinis smūgis 4", "fen": "8/6q1/2p5/8/4P1k1/8/R7/5K2 w - - 0 1", "goal": {"ok": ["a2g2"], "gain": 750}, "txt": ["Skelbk šachą taip, kad už karaliaus toje pačioje linijoje stovėtų brangi figūra.", "Karaliui pasitraukus, linija atsiveria ir figūra krenta."], "task": "Rask kiaurinį smūgį."},
+ {"id": "l63", "m": 6, "g": "♜", "t": "Treniruotė: kiaurinis smūgis 5", "fen": "8/5Q2/p7/1p2k3/8/P2B4/7K/q7 w - - 0 1", "goal": {"ok": ["f7g7"], "gain": 850}, "txt": ["Skelbk šachą taip, kad už karaliaus toje pačioje linijoje stovėtų brangi figūra.", "Karaliui pasitraukus, linija atsiveria ir figūra krenta."], "task": "Rask kiaurinį smūgį."},
+ {"id": "l64", "m": 6, "g": "♜", "t": "Treniruotė: kiaurinis smūgis 6", "fen": "2b5/3R4/p7/2k5/8/2n5/8/4K3 w - - 0 1", "goal": {"ok": ["d7c7"], "gain": 300}, "txt": ["Skelbk šachą taip, kad už karaliaus toje pačioje linijoje stovėtų brangi figūra.", "Karaliui pasitraukus, linija atsiveria ir figūra krenta."], "task": "Rask kiaurinį smūgį."},
+ {"id": "l65", "m": 7, "g": "♛", "t": "Atidengtas šachas", "fen": "8/q5b1/pR1Nk3/8/3pP3/8/3K4/8 w - - 0 1", "goal": {"ok": ["d6c8"], "gain": 350}, "txt": ["Patrauk figūrą, kuri užstoja tavo toli einančios figūros liniją. Atsiradęs šachas priverčia priešininką gintis.", "Paėjusi figūra tuo metu gali pulti ką nori – priešininkas nespės apginti."], "task": "Atidenk puolimą ir laimėk medžiagą."},
+ {"id": "l66", "m": 7, "g": "♛", "t": "Treniruotė: atidengtas puolimas 1", "fen": "4q3/8/3Q4/3N4/5p2/3k4/8/3K4 w - - 0 1", "goal": {"ok": ["d5c7", "d5f6"], "gain": 850}, "txt": ["Patrauk figūrą, kuri užstoja tavo toli einančios figūros liniją. Atsiradęs šachas priverčia priešininką gintis.", "Paėjusi figūra tuo metu gali pulti ką nori – priešininkas nespės apginti."], "task": "Atidenk puolimą ir laimėk medžiagą."},
+ {"id": "l67", "m": 7, "g": "♛", "t": "Treniruotė: atidengtas puolimas 2", "fen": "8/8/7p/8/8/2k1b1BR/7K/8 w - - 0 1", "goal": {"ok": ["g3f4", "g3f2"], "gain": 300}, "txt": ["Patrauk figūrą, kuri užstoja tavo toli einančios figūros liniją. Atsiradęs šachas priverčia priešininką gintis.", "Paėjusi figūra tuo metu gali pulti ką nori – priešininkas nespės apginti."], "task": "Atidenk puolimą ir laimėk medžiagą."},
+ {"id": "l68", "m": 7, "g": "♛", "t": "Treniruotė: atidengtas puolimas 3", "fen": "4r3/7R/8/2b4N/6pk/1K5P/4P3/8 w - - 0 1", "goal": {"ok": ["h5f6", "h5g7"], "gain": 350}, "txt": ["Patrauk figūrą, kuri užstoja tavo toli einančios figūros liniją. Atsiradęs šachas priverčia priešininką gintis.", "Paėjusi figūra tuo metu gali pulti ką nori – priešininkas nespės apginti."], "task": "Atidenk puolimą ir laimėk medžiagą."},
+ {"id": "l69", "m": 7, "g": "♛", "t": "Treniruotė: atidengtas puolimas 4", "fen": "8/7p/8/7r/pkB1R3/6P1/6K1/8 w - - 0 1", "goal": {"ok": ["c4f7", "c4e2"], "gain": 450}, "txt": ["Patrauk figūrą, kuri užstoja tavo toli einančios figūros liniją. Atsiradęs šachas priverčia priešininką gintis.", "Paėjusi figūra tuo metu gali pulti ką nori – priešininkas nespės apginti."], "task": "Atidenk puolimą ir laimėk medžiagą."},
+ {"id": "l70", "m": 7, "g": "♛", "t": "Treniruotė: atidengtas puolimas 5", "fen": "8/6n1/kp2p3/B7/2P2P2/8/R3K3/8 w - - 0 1", "goal": {"ok": ["a5c3"], "gain": 300}, "txt": ["Patrauk figūrą, kuri užstoja tavo toli einančios figūros liniją. Atsiradęs šachas priverčia priešininką gintis.", "Paėjusi figūra tuo metu gali pulti ką nori – priešininkas nespės apginti."], "task": "Atidenk puolimą ir laimėk medžiagą."},
+ {"id": "l71", "m": 7, "g": "♛", "t": "Treniruotė: atidengtas puolimas 6", "fen": "1RB1k3/8/1p6/3q4/8/6K1/5P2/8 w - - 0 1", "goal": {"ok": ["c8e6", "c8b7"], "gain": 350}, "txt": ["Patrauk figūrą, kuri užstoja tavo toli einančios figūros liniją. Atsiradęs šachas priverčia priešininką gintis.", "Paėjusi figūra tuo metu gali pulti ką nori – priešininkas nespės apginti."], "task": "Atidenk puolimą ir laimėk medžiagą."},
+ {"id": "l72", "m": 7, "g": "♛", "t": "Treniruotė: atidengtas puolimas 7", "fen": "5b2/k7/8/2N5/p6p/4B3/4K3/8 w - - 0 1", "goal": {"ok": ["c5d7", "c5e6"], "gain": 300}, "txt": ["Patrauk figūrą, kuri užstoja tavo toli einančios figūros liniją. Atsiradęs šachas priverčia priešininką gintis.", "Paėjusi figūra tuo metu gali pulti ką nori – priešininkas nespės apginti."], "task": "Atidenk puolimą ir laimėk medžiagą."},
+ {"id": "l73", "m": 7, "g": "♛", "t": "Treniruotė: atidengtas puolimas 8", "fen": "4n3/6p1/8/4k3/6q1/1K6/4N3/4Q3 w - - 0 1", "goal": {"ok": ["e2c3"], "gain": 300}, "txt": ["Patrauk figūrą, kuri užstoja tavo toli einančios figūros liniją. Atsiradęs šachas priverčia priešininką gintis.", "Paėjusi figūra tuo metu gali pulti ką nori – priešininkas nespės apginti."], "task": "Atidenk puolimą ir laimėk medžiagą."},
+ {"id": "l74", "m": 8, "g": "♛", "t": "Kas yra kombinacija", "fen": "7k/R6p/q7/8/8/1Q6/5KP1/2N5 w - - 0 1", "goal": "mate2", "txt": ["Kombinacija – priverstinių ėjimų seka, kuri baigiasi matu ar medžiagos laimėjimu. Kartais tam tenka paaukoti figūrą.", "Pirmasis ėjimas turi būti toks, kad po bet kokio atsakymo liktų matas."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l75", "m": 8, "g": "♛", "t": "Kombinacija 2", "fen": "4k1b1/4p3/8/8/5Rn1/1PP5/2R1K1Q1/8 w - - 0 1", "goal": "mate2", "txt": ["Ieškok priverstinių ėjimų: šachų, kirtimų ir grėsmių. Jie palieka priešininkui mažiausiai pasirinkimų.", "Pirmasis ėjimas turi būti toks, kad po bet kokio atsakymo liktų matas."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l76", "m": 8, "g": "♛", "t": "Kombinacija 3", "fen": "4k3/4p2p/8/8/3Q4/3K4/3P4/7Q w - - 0 1", "goal": "mate2", "txt": ["Ieškok priverstinių ėjimų: šachų, kirtimų ir grėsmių. Jie palieka priešininkui mažiausiai pasirinkimų.", "Pirmasis ėjimas turi būti toks, kad po bet kokio atsakymo liktų matas."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l77", "m": 8, "g": "♛", "t": "Kombinacija 4", "fen": "7k/4b1pp/5N2/8/p7/1R1P2K1/4B3/8 w - - 0 1", "goal": "mate2", "txt": ["Ieškok priverstinių ėjimų: šachų, kirtimų ir grėsmių. Jie palieka priešininkui mažiausiai pasirinkimų.", "Pirmasis ėjimas turi būti toks, kad po bet kokio atsakymo liktų matas."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l78", "m": 8, "g": "♛", "t": "Kombinacija 5", "fen": "1k3q2/4pn2/8/2Q5/5R2/4P3/3PK3/8 w - - 0 1", "goal": "mate2", "txt": ["Ieškok priverstinių ėjimų: šachų, kirtimų ir grėsmių. Jie palieka priešininkui mažiausiai pasirinkimų.", "Pirmasis ėjimas turi būti toks, kad po bet kokio atsakymo liktų matas."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l79", "m": 8, "g": "♛", "t": "Kombinacija 6", "fen": "8/k7/1p6/p7/3Qn3/1R6/8/3KQ3 w - - 0 1", "goal": "mate2", "txt": ["Ieškok priverstinių ėjimų: šachų, kirtimų ir grėsmių. Jie palieka priešininkui mažiausiai pasirinkimų.", "Pirmasis ėjimas turi būti toks, kad po bet kokio atsakymo liktų matas."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l80", "m": 8, "g": "♛", "t": "Kombinacija 7", "fen": "1k6/7B/Qqp5/8/4r3/2K5/2P5/3Q4 w - - 0 1", "goal": "mate2", "txt": ["Ieškok priverstinių ėjimų: šachų, kirtimų ir grėsmių. Jie palieka priešininkui mažiausiai pasirinkimų.", "Pirmasis ėjimas turi būti toks, kad po bet kokio atsakymo liktų matas."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l81", "m": 8, "g": "♛", "t": "Kombinacija 8", "fen": "7k/8/8/8/8/8/R7/1R4K1 w - - 0 1", "goal": "mate2", "txt": ["Ieškok priverstinių ėjimų: šachų, kirtimų ir grėsmių. Jie palieka priešininkui mažiausiai pasirinkimų.", "Pirmasis ėjimas turi būti toks, kad po bet kokio atsakymo liktų matas."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l82", "m": 8, "g": "♛", "t": "Kombinacija 9", "fen": "1r4k1/r7/8/8/8/8/8/7K b - - 0 1", "goal": "mate2", "txt": ["Ieškok priverstinių ėjimų: šachų, kirtimų ir grėsmių. Jie palieka priešininkui mažiausiai pasirinkimų.", "Pirmasis ėjimas turi būti toks, kad po bet kokio atsakymo liktų matas."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l83", "m": 9, "g": "♚", "t": "Kvadrato taisyklė", "fen": "8/8/8/5k2/P7/8/8/7K b - - 0 1", "goal": [["f5", "e4"], ["f5", "e5"], ["f5", "e6"]], "txt": ["Nubrėžk kvadratą nuo pėstininko iki virsmo langelio. Jei karalius gali į jį įžengti, jis pagaus pėstininką.", "Šį kartą pėstininkas a4 eis į a8, todėl kvadratas – nuo a4 iki e8."], "task": "Juodieji: įženk į pėstininko kvadratą."},
+ {"id": "l84", "m": 9, "g": "♙", "t": "Pėstininkų lenktynės", "fen": "8/8/8/8/7k/8/P7/K7 w - - 0 1", "goal": [["a2", "a4"], ["a2", "a3"]], "txt": ["Juodųjų karalius už kvadrato ribų, todėl pėstininkas nubėgs iki galo.", "Endšpilyje kiekvienas tempas svarbus."], "task": "Stumk pėstininką į priekį."},
+ {"id": "l85", "m": 9, "g": "♜", "t": "Bokšto matas", "fen": "4k3/8/4K3/8/8/8/8/R7 w - - 0 1", "goal": "mate", "txt": ["Su bokštu ir karaliumi matą galima paskelbti tik lentos krašte.", "Karaliai turi stovėti vienas priešais kitą."], "task": "Paskelbk matą bokštu."},
+ {"id": "l86", "m": 9, "g": "♛", "t": "Valdovės matas", "fen": "7k/8/6K1/8/8/8/8/1Q6 w - - 0 1", "goal": "mate", "txt": ["Valdovė su karaliumi paskelbia matą greitai, bet tik jei karalius padeda.", "Nuvaryk karalių į kampą ir priartink savąjį."], "task": "Paskelbk matą valdove."},
+ {"id": "l87", "m": 9, "g": "♛", "t": "Saugokis pato", "fen": "k7/8/1K6/8/8/8/8/2Q5 w - - 0 1", "goal": "mate", "txt": ["Patas – kai priešininkas neturi nė vieno ėjimo, bet jam nėra šacho. Tada partija baigiasi lygiosiomis!", "Užspaudęs karalių kampe, palik jam bent vieną ėjimą arba skelbk matą."], "task": "Paskelbk matą, o ne patą."},
+ {"id": "l88", "m": 9, "g": "♜", "t": "Du bokštai endšpilyje", "fen": "2k5/7R/8/8/8/8/8/R5K1 w - - 0 1", "goal": "mate", "txt": ["Du bokštai paskelbia matą net be karaliaus pagalbos.", "Vienas bokštas saugo horizontalę, kitas skelbia šachą."], "task": "Paskelbk matą."},
+ {"id": "l89", "m": 9, "g": "♙", "t": "Karalius padeda pėstininkui", "fen": "8/KP1k4/8/8/8/8/8/8 w - - 0 1", "goal": [["b7", "b8"]], "txt": ["Endšpilyje karalius tampa kovotoju: jis saugo virsmo langelį.", "Kai virsmo langelis apsaugotas, pėstininkas tampa valdove saugiai."], "task": "Pasiek virsmą."},
+ {"id": "l90", "m": 9, "g": "♚", "t": "Matas lentos krašte 1", "fen": "k1K4B/8/8/8/8/8/8/5R2 w - - 0 1", "goal": "mate", "txt": ["Kuo mažiau figūrų lentoje, tuo svarbiau tiksliai skaičiuoti pabėgimo langelius."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l91", "m": 9, "g": "♚", "t": "Matas lentos krašte 2", "fen": "7k/6pp/8/8/5B1K/8/8/R7 w - - 0 1", "goal": "mate", "txt": ["Kuo mažiau figūrų lentoje, tuo svarbiau tiksliai skaičiuoti pabėgimo langelius."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l92", "m": 10, "g": "♟", "t": "Medžioklė 1", "fen": "7k/8/8/2q5/8/NK6/5nn1/2Q5 w - - 0 1", "goal": [["c1", "c5"]], "txt": ["Mišri treniruotė: ieškok nesaugomų figūrų ir geriausių atsakymų į šachus."], "task": "Rask geriausią ėjimą."},
+ {"id": "l93", "m": 10, "g": "♟", "t": "Medžioklė 2", "fen": "1k6/8/p7/B7/6K1/Rb4p1/8/8 w - - 0 1", "goal": [["a3", "b3"]], "txt": ["Mišri treniruotė: ieškok nesaugomų figūrų ir geriausių atsakymų į šachus."], "task": "Rask geriausią ėjimą."},
+ {"id": "l94", "m": 10, "g": "♟", "t": "Medžioklė 3", "fen": "8/8/7k/8/8/3nK3/4N3/8 w - - 0 1", "goal": [["e3", "d3"]], "txt": ["Mišri treniruotė: ieškok nesaugomų figūrų ir geriausių atsakymų į šachus."], "task": "Rask geriausią ėjimą."},
+ {"id": "l95", "m": 10, "g": "♟", "t": "Medžioklė 4", "fen": "k7/8/r6Q/n6N/8/8/8/K7 w - - 0 1", "goal": [["h6", "a6"]], "txt": ["Mišri treniruotė: ieškok nesaugomų figūrų ir geriausių atsakymų į šachus."], "task": "Rask geriausią ėjimą."},
+ {"id": "l96", "m": 10, "g": "♟", "t": "Medžioklė 5", "fen": "8/7k/8/8/6PK/8/R1n5/8 w - - 0 1", "goal": [["a2", "c2"]], "txt": ["Mišri treniruotė: ieškok nesaugomų figūrų ir geriausių atsakymų į šachus."], "task": "Rask geriausią ėjimą."},
+ {"id": "l97", "m": 10, "g": "♟", "t": "Medžioklė 6", "fen": "k7/4n3/3Qb3/8/7K/8/8/8 w - - 0 1", "goal": [["d6", "e6"]], "txt": ["Mišri treniruotė: ieškok nesaugomų figūrų ir geriausių atsakymų į šachus."], "task": "Rask geriausią ėjimą."},
+ {"id": "l98", "m": 10, "g": "♟", "t": "Medžioklė 7", "fen": "8/4k3/8/8/8/5N2/3b3K/8 w - - 0 1", "goal": [["f3", "d2"]], "txt": ["Mišri treniruotė: ieškok nesaugomų figūrų ir geriausių atsakymų į šachus."], "task": "Rask geriausią ėjimą."},
+ {"id": "l99", "m": 10, "g": "♟", "t": "Medžioklė 8", "fen": "8/8/8/3b2k1/4K3/8/8/B7 w - - 0 1", "goal": [["e4", "d5"]], "txt": ["Mišri treniruotė: ieškok nesaugomų figūrų ir geriausių atsakymų į šachus."], "task": "Rask geriausią ėjimą."},
+ {"id": "l100", "m": 10, "g": "♟", "t": "Medžioklė 9", "fen": "8/6n1/8/2k5/4RB2/1rK5/8/8 w - - 0 1", "goal": [["c3", "b3"]], "txt": ["Mišri treniruotė: ieškok nesaugomų figūrų ir geriausių atsakymų į šachus."], "task": "Rask geriausią ėjimą."},
+ {"id": "l101", "m": 11, "g": "♝", "t": "Itališkoji partija", "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3", "goal": [["f8", "c5"], ["g8", "f6"]], "txt": ["Itališkoji partija – viena seniausių: baltųjų rikis c4 taiko į f7.", "Juodieji atsako simetriškai rikiu c5 arba puola e4 žirgu f6 (dviejų žirgų gynyba)."], "task": "Juodieji: išvesk figūrą aktyviai."},
+ {"id": "l102", "m": 11, "g": "♝", "t": "Ispaniškoji partija", "fen": "r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 4", "goal": [["b5", "a4"], ["b5", "c6"]], "txt": ["Ispaniškojoje partijoje rikis b5 spaudžia žirgą, kuris gina e5.", "Į a6 dažniausiai atsitraukiama į a4, išlaikant spaudimą, arba iškeičiama į c6."], "task": "Baltieji: nuspręsk, ką daryti su rikiu."},
+ {"id": "l103", "m": 11, "g": "♟", "t": "Sicilijos gynyba", "fen": "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2", "goal": [["d7", "d6"], ["b8", "c6"], ["e7", "e6"]], "txt": ["Sicilijos gynyba – populiariausias atsakas į 1.e4. Juodieji kovoja dėl d4 iš šono.", "Po 2.Nf3 dažniausi ėjimai: d6, Nc6 arba e6."], "task": "Juodieji: tęsk Sicilijos gynybą."},
+ {"id": "l104", "m": 11, "g": "♟", "t": "Prancūzų gynyba", "fen": "rnbqkbnr/pppp1ppp/4p3/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq d3 0 2", "goal": [["d7", "d5"]], "txt": ["Prancūzų gynyboje juodieji pirmiausia paruošia d5 ėjimą pėstininku e6.", "Dabar laikas smogti į baltųjų centrą."], "task": "Juodieji: puolk centrą."},
+ {"id": "l105", "m": 11, "g": "♟", "t": "Karo-Kano gynyba", "fen": "rnbqkbnr/pp1ppppp/2p5/8/3PP3/8/PPP2PPP/RNBQKBNR b KQkq d3 0 2", "goal": [["d7", "d5"]], "txt": ["Karo-Kano gynyba panaši į prancūzų, bet ėjimas c6 neužstoja šviesiaspalvio rikio.", "Ji laikoma viena patikimiausių gynybų."], "task": "Juodieji: užbaik gynybos idėją."},
+ {"id": "l106", "m": 11, "g": "♛", "t": "Skandinavų gynyba", "fen": "rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2", "goal": [["d8", "d5"], ["g8", "f6"]], "txt": ["Skandinavų gynyboje juodieji iškart puola e4 pėstininką.", "Pėstininką atgauna valdove arba pirmiau išveda žirgą f6."], "task": "Juodieji: atgauk pėstininką."},
+ {"id": "l107", "m": 11, "g": "♙", "t": "Valdovės gambitas", "fen": "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq d6 0 2", "goal": [["c2", "c4"]], "txt": ["Valdovės gambite baltieji siūlo pėstininką c4, kad atitrauktų juodųjų pėstininką nuo centro.", "Tai tikrasis gambitas tik iš pavadinimo: pėstininką paprastai pavyksta atgauti."], "task": "Baltieji: pasiūlyk valdovės gambitą."},
+ {"id": "l108", "m": 11, "g": "♝", "t": "Karaliaus indų gynyba", "fen": "rnbqkb1r/pppppppp/5n2/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq c3 0 2", "goal": [["g7", "g6"]], "txt": ["Karaliaus indų gynyboje juodieji leidžia baltiesiems užimti centrą, o vėliau jį puola.", "Rikis g7 tampa galingu ilgosios įstrižainės šauliu."], "task": "Juodieji: paruošk rikio išvedimą į g7."},
+ {"id": "l109", "m": 11, "g": "♝", "t": "Londono sistema", "fen": "rnbqkb1r/ppp1pppp/5n2/3p4/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 2 3", "goal": [["c1", "f4"]], "txt": ["Londono sistema – paprastas ir tvirtas planas baltiesiems: rikis f4, pėstininkai e3 ir c3.", "Ji tinka beveik prieš bet kokią juodųjų sistemą."], "task": "Baltieji: išvesk rikį prieš uždarant pėstininką e3."},
+ {"id": "l110", "m": 11, "g": "♞", "t": "Angliškoji partija", "fen": "rnbqkbnr/pppp1ppp/8/4p3/2P5/2N5/PP1PPPPP/R1BQKBNR b KQkq - 1 2", "goal": [["g8", "f6"], ["b8", "c6"]], "txt": ["Angliškojoje partijoje baltieji kontroliuoja d5 iš šono pėstininku c4.", "Juodieji gali žaisti kaip Sicilijoje, tik su viena spalva mažiau tempų."], "task": "Juodieji: išvesk žirgą."},
+ {"id": "l111", "m": 12, "g": "♞", "t": "Legalio matas", "fen": "rn1qkbnr/ppp2p1p/3p2p1/4N3/2B1P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 6", "goal": "mate2", "txt": ["Juodieji ką tik nukirto baltųjų valdovę. Bet tai buvo spąstai!", "Legalio matas – garsiausia valdovės auka atidaryme."], "task": "Baltieji: paskelbk matą dviem ėjimais."},
+ {"id": "l112", "m": 12, "g": "♞", "t": "Blekberno spąstai", "fen": "r1b1kbnr/pppp1Npp/8/8/3nq3/8/PPPPBP1P/RNBQKR2 b Qkq - 1 7", "goal": "mate", "txt": ["Baltieji godžiai kirto pėstininką e5 ir dar f7. Juodųjų figūros tuo metu atsidūrė prie baltųjų karaliaus.", "Dabar vienas žirgo šuolis baigia partiją."], "task": "Juodieji: paskelbk matą."},
+ {"id": "l113", "m": 12, "g": "♞", "t": "Dramblio spąstai", "fen": "r1bqkb1r/pppn1ppp/5n2/3N2B1/3P4/8/PP2PPPP/R2QKBNR b KQkq - 0 6", "goal": [["f6", "d5"]], "txt": ["Baltieji mano, kad žirgas f6 surištas ir juodieji praras pėstininką d5.", "Bet po Nxd5 Bxd8 seka Bb4+ ir juodieji laimi figūrą."], "task": "Juodieji: nukirsk žirgą nepaisydami surišimo."},
+ {"id": "l114", "m": 12, "g": "♟", "t": "Nojaus arkos spąstai", "fen": "r1bqkbnr/2p2ppp/p2p4/1p6/3QP3/1B6/PPP2PPP/RNB1K2R b KQkq - 0 8", "goal": [["c7", "c5"]], "txt": ["Baltųjų rikis b3 įsispraudė tarp juodųjų pėstininkų.", "Ėjimas c5 gena valdovę, o po c4 rikis bus pagautas."], "task": "Juodieji: pradėk gaudyti rikį."},
+ {"id": "l115", "m": 12, "g": "♛", "t": "Englundo gambito spąstai", "fen": "r1b1k1nr/pppp1ppp/2n5/4P3/8/2Q2N2/PqP1PPPP/RN2KB1R b KQkq - 0 8", "goal": "mate", "txt": ["Baltieji neatsargiai leido valdovei įsiveržti į b2.", "Dabar karalius užspaustas savo figūrų."], "task": "Juodieji: paskelbk matą."},
+ {"id": "l116", "m": 12, "g": "♞", "t": "Budapešto spąstai", "fen": "r1b1k2r/ppppqppp/2n5/4n3/1PP2B2/5N2/1P1NPPPP/R2QKB1R b KQkq - 0 8", "goal": "mate", "txt": ["Baltieji nukirto rikį, nepastebėję, kad juodųjų žirgas ir valdovė jau prie karaliaus.", "Uždusinimo idėja: karaliui trukdo jo paties figūros."], "task": "Juodieji: paskelbk matą žirgu."},
+ {"id": "l117", "m": 12, "g": "♞", "t": "Laskerio spąstai", "fen": "rnbqk1nr/ppp2ppp/8/4P3/1BP5/8/PP2KpPP/RN1Q1BNR b kq - 1 7", "goal": [["f2", "g1", "n"]], "txt": ["Retas atvejis, kai pėstininkas turi virsti ne valdove, o žirgu!", "Virtęs žirgu su šachu, jis laimi daug medžiagos."], "task": "Juodieji: kirsk g1 ir pasirink žirgą."},
+ {"id": "l118", "m": 12, "g": "♛", "t": "Damiano gynybos klaida", "fen": "rnbqkbnr/pppp2pp/8/4p3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 4", "goal": [["d1", "h5"]], "txt": ["Ėjimas f6 susilpnina juodųjų karalių, o kirtimas fxe5 atveria įstrižainę h5–e8.", "Po valdovės šacho juodieji pralaimi daug medžiagos arba gauna matą."], "task": "Baltieji: išnaudok susilpnintą įstrižainę."},
+ {"id": "l119", "m": 12, "g": "♞", "t": "Petrovo gynybos spąstai", "fen": "rnbqkb1r/pppp1ppp/5n2/4N3/8/8/PPPPQPPP/RNB1KB1R w KQkq - 2 5", "goal": [["e5", "c6"]], "txt": ["Juodieji atsitraukė žirgu ir paliko karalių bei valdovę toje pačioje e linijoje su baltųjų valdove.", "Žirgas atidengia šachą ir tuo pačiu puola valdovę."], "task": "Baltieji: laimėk valdovę."},
+ {"id": "l120", "m": 12, "g": "♛", "t": "Fromo gambito spąstai", "fen": "rnb1k1nr/ppp2ppp/8/8/7q/2N3P1/PPPPP3/R1BQKBNR b KQkq - 0 6", "goal": "mate", "txt": ["Baltieji silpnino karaliaus pusę ėjimais f4 ir g3.", "Juodųjų valdovė pasinaudoja atviromis įstrižainėmis."], "task": "Juodieji: paskelbk matą."},
+ {"id": "l121", "m": 13, "g": "♚", "t": "Bodeno matas", "fen": "2kr4/p2n4/8/8/5B2/8/8/4KB2 w - - 0 1", "goal": "mate", "txt": ["Du rikiai kryžmai užkerta karaliui kelius, o jo paties figūros užstoja likusius langelius.", "Šios schemos dažnai pasitaiko tikrose partijose, todėl verta jas atpažinti iš pirmo žvilgsnio."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l122", "m": 13, "g": "♚", "t": "Greko matas", "fen": "7k/6p1/8/8/2B5/4R3/8/K7 w - - 0 1", "goal": "mate", "txt": ["Rikis kontroliuoja g8, o bokštas skelbia matą h linijoje.", "Šios schemos dažnai pasitaiko tikrose partijose, todėl verta jas atpažinti iš pirmo žvilgsnio."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l123", "m": 13, "g": "♚", "t": "Damiano matas", "fen": "5rk1/5p2/6P1/8/8/8/8/K6Q w - - 0 1", "goal": "mate", "txt": ["Pėstininkas g6 saugo valdovę, kuri įsiveržia į h7.", "Šios schemos dažnai pasitaiko tikrose partijose, todėl verta jas atpažinti iš pirmo žvilgsnio."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l124", "m": 13, "g": "♚", "t": "Lolio matas", "fen": "5rk1/5p1p/5PpQ/8/8/8/8/K7 w - - 0 1", "goal": "mate", "txt": ["Pėstininkas f6 saugo langelį g7, kuriame valdovė paskelbia matą.", "Šios schemos dažnai pasitaiko tikrose partijose, todėl verta jas atpažinti iš pirmo žvilgsnio."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l125", "m": 13, "g": "♚", "t": "Operos matas", "fen": "4kb2/5p2/8/6B1/8/8/8/3RK3 w - - 0 1", "goal": "mate", "txt": ["Pavadintas pagal Morfio partiją operoje: bokštas skelbia matą, rikis jį saugo ir dengia e7.", "Šios schemos dažnai pasitaiko tikrose partijose, todėl verta jas atpažinti iš pirmo žvilgsnio."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l126", "m": 13, "g": "♚", "t": "Matų treniruotė 1", "fen": "3b2k1/R7/8/8/2r4P/1P2Q3/1P6/3K4 w - - 0 1", "goal": "mate", "txt": ["Peržiūrėk visus šachus. Matas dažnai slypi ten, kur figūra paaukojama ar įsiveržia arti karaliaus."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l127", "m": 13, "g": "♚", "t": "Matų treniruotė 2", "fen": "7k/4N2p/1r2b3/8/1q6/6Q1/8/7K w - - 0 1", "goal": "mate", "txt": ["Peržiūrėk visus šachus. Matas dažnai slypi ten, kur figūra paaukojama ar įsiveržia arti karaliaus."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l128", "m": 13, "g": "♚", "t": "Matų treniruotė 3", "fen": "8/k4r2/p2Q4/4B3/8/8/1R4K1/8 w - - 0 1", "goal": "mate", "txt": ["Peržiūrėk visus šachus. Matas dažnai slypi ten, kur figūra paaukojama ar įsiveržia arti karaliaus."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l129", "m": 13, "g": "♚", "t": "Matų treniruotė 4", "fen": "3k4/1Q2p3/8/8/1p6/5K2/7P/6R1 w - - 0 1", "goal": "mate", "txt": ["Peržiūrėk visus šachus. Matas dažnai slypi ten, kur figūra paaukojama ar įsiveržia arti karaliaus."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l130", "m": 13, "g": "♚", "t": "Matų treniruotė 5", "fen": "3k4/5R2/2RNp3/6p1/8/P2K4/1P1P4/8 w - - 0 1", "goal": "mate", "txt": ["Peržiūrėk visus šachus. Matas dažnai slypi ten, kur figūra paaukojama ar įsiveržia arti karaliaus."], "task": "Paskelbk matą vienu ėjimu."},
+ {"id": "l131", "m": 14, "g": "♞", "t": "Mišri taktika 1", "fen": "8/4N1p1/8/8/B6k/6b1/3K1B2/8 w - - 0 1", "goal": {"ok": ["e7f5"], "gain": 300}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l132", "m": 14, "g": "♞", "t": "Mišri taktika 2", "fen": "8/8/7R/Q1p5/4kP2/8/4q1PK/8 w - - 0 1", "goal": {"ok": ["h6e6"], "gain": 350}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l133", "m": 14, "g": "♞", "t": "Mišri taktika 3", "fen": "8/q5b1/pR1Nk3/8/3pP3/8/3K4/8 w - - 0 1", "goal": {"ok": ["d6c8"], "gain": 350}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l134", "m": 14, "g": "♞", "t": "Mišri taktika 4", "fen": "4r3/k3P3/8/8/2p5/1Q6/1K6/8 w - - 0 1", "goal": {"ok": ["b3a4"], "gain": 450}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l135", "m": 14, "g": "♞", "t": "Mišri taktika 5", "fen": "q4k2/2p4R/8/8/3K4/3N4/8/8 w - - 0 1", "goal": {"ok": ["h7h8"], "gain": 850}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l136", "m": 14, "g": "♞", "t": "Mišri taktika 6", "fen": "4q3/8/3Q4/3N4/5p2/3k4/8/3K4 w - - 0 1", "goal": {"ok": ["d5c7", "d5f6"], "gain": 850}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l137", "m": 14, "g": "♞", "t": "Mišri taktika 7", "fen": "5b2/7P/3k4/8/8/3K4/7b/8 w - - 0 1", "goal": {"ok": ["h7h8", "h7h8"], "gain": 750}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l138", "m": 14, "g": "♞", "t": "Mišri taktika 8", "fen": "q2k4/7Q/1p6/8/8/3P4/1K6/N7 w - - 0 1", "goal": {"ok": ["h7g8", "h7h8"], "gain": 850}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l139", "m": 14, "g": "♞", "t": "Mišri taktika 9", "fen": "8/8/7p/8/8/2k1b1BR/7K/8 w - - 0 1", "goal": {"ok": ["g3f4", "g3f2"], "gain": 300}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l140", "m": 14, "g": "♞", "t": "Mišri taktika 10", "fen": "8/8/1p2q3/3k4/Pp6/3N4/1KPN4/3b4 w - - 0 1", "goal": {"ok": ["d3f4"], "gain": 550}, "txt": ["Šį kartą nesakome, koks tai metodas. Ieškok šakutės, kiaurinio smūgio arba atidengto puolimo.", "Užuomina parodys, kuria figūra pradėti."], "task": "Rask taktinį smūgį ir laimėk medžiagą."},
+ {"id": "l141", "m": 15, "g": "♛", "t": "Kombinacija II-1", "fen": "7k/3Q2p1/4p1p1/8/2R4P/K7/2P1P3/8 w - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l142", "m": 15, "g": "♛", "t": "Kombinacija II-2", "fen": "4kbq1/4p2N/4Q3/8/8/8/1K6/8 w - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l143", "m": 15, "g": "♛", "t": "Kombinacija II-3", "fen": "1b6/7k/8/1p6/2q1b3/8/3PP3/4K3 b - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l144", "m": 15, "g": "♛", "t": "Kombinacija II-4", "fen": "r2k4/R2p4/3p4/4Q1n1/4p3/4P3/3PP1K1/8 w - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l145", "m": 15, "g": "♛", "t": "Kombinacija II-5", "fen": "7k/7b/6n1/Q7/8/8/B3K3/8 w - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l146", "m": 15, "g": "♛", "t": "Kombinacija II-6", "fen": "8/3r4/4k1q1/8/R7/8/5P2/5K2 b - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l147", "m": 15, "g": "♛", "t": "Kombinacija II-7", "fen": "2k5/1pp3b1/4n1Q1/8/8/1P1R4/2P5/4K3 w - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l148", "m": 15, "g": "♛", "t": "Kombinacija II-8", "fen": "4k3/R3p3/8/8/p7/8/P5P1/Q1K3R1 w - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l149", "m": 15, "g": "♛", "t": "Kombinacija II-9", "fen": "1k1n4/6p1/8/7p/8/4R1q1/PP6/K7 b - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."},
+ {"id": "l150", "m": 15, "g": "♛", "t": "Kombinacija II-10", "fen": "k7/pp6/8/8/2r4R/2P5/7K/8 w - - 0 1", "goal": "mate2", "txt": ["Ieškok ėjimo, po kurio priešininkas, ką bepadarytų, gaus matą. Dažnai tai tylus ėjimas, atimantis paskutinį pabėgimo langelį."], "task": "Paskelbk matą dviem ėjimais."}
+];
+const SKINS=[
+ {id:"classic",n:"Klasika",p:0,tier:"Pagrindinis",d:"Balta ir juoda, kaip turnyre."},
+ {id:"wood",n:"Medis",p:50,tier:"Paprastas",d:"Šviesus klevas ir tamsus riešutmedis."},
+ {id:"marble",n:"Marmuras",p:100,tier:"Paprastas",d:"Baltas marmuras prieš juodą oniksą."},
+ {id:"emerald",n:"Smaragdas",p:175,tier:"Retas",d:"Žalių brangakmenių blizgesys."},
+ {id:"gems",n:"Rubinas ir safyras",p:250,tier:"Retas",d:"Raudoni ir mėlyni brangakmeniai su švytėjimu."},
+ {id:"neon",n:"Neonas",p:350,tier:"Retas",d:"Švytinčios naktinio miesto spalvos."},
+ {id:"ice",n:"Ledas",p:450,tier:"Epinis",d:"Permatomas ledas su šerkšno spindesiu."},
+ {id:"sunset",n:"Saulėlydis",p:600,tier:"Epinis",d:"Vakaro dangaus spalvų perėjimas."},
+ {id:"metal",n:"Auksas ir sidabras",p:850,tier:"Legendinis",d:"Blizgantys metalai su bėgančiu atspindžiu."},
+ {id:"cosmos",n:"Kosmosas",p:1150,tier:"Legendinis",d:"Galaktikų spalvos, kurios lėtai teka."},
+ {id:"diamond",n:"Deimantinis",p:1500,tier:"Mitinis",d:"Vaivorykštinis deimanto žaižaravimas."},
+ {id:"emperor",n:"Imperatorius",p:2000,tier:"Mitinis",d:"Dramblio kaulo ir imperatoriškos mėlynės armija. Kiekviena figūra dėvi Napoleono dvikampę kepurę su trispalve kokarda."}
+];
+const MODS=["Figūros ir taisyklės","Lenta ir figūrų vertė","Gynyba nuo šacho","Matų schemos","Atidarymo principai","Šakutės ir dvigubos atakos","Surišimas ir kiaurinis smūgis","Atidengtas puolimas","Kombinacijos: matas dviem ėjimais","Endšpilio pagrindai","Medžiagos medžioklė","Garsūs atidarymai","Atidarymo spąstai","Daugiau matų schemų","Mišri taktika","Kombinacijos II"];
+LESSONS.forEach(l=>{if(l.m===undefined)l.m=0});
+const PUZZLES=[
+ {id:"p1",lv:1,fen:"k7/8/1K6/8/8/8/7Q/8 w - - 0 1"},
+ {id:"p2",lv:1,fen:"7k/5Q2/5K2/8/8/8/8/8 w - - 0 1"},
+ {id:"p3",lv:1,fen:"4k3/4P3/4K3/8/8/8/8/R7 w - - 0 1"},
+ {id:"p4",lv:1,fen:"6k1/6p1/6Kp/8/8/8/8/1Q6 w - - 0 1"},
+ {id:"p5",lv:1,fen:"3k4/8/3K4/8/8/8/8/7Q w - - 0 1"},
+ {id:"p6",lv:1,fen:"r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1",name:"Vaikų matas"},
+ {id:"p7",lv:1,fen:"rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 1",name:"Kvailio matas"},
+ {id:"p8",lv:2,fen:"6rk/6pp/8/6N1/8/8/8/6K1 w - - 0 1",name:"Uždusinimas"},
+ {id:"p9",lv:2,fen:"7k/6pp/8/8/8/8/1B6/1K4Q1 w - - 0 1"},
+ {id:"p10",lv:2,fen:"7k/7p/5N2/8/8/8/8/6RK w - - 0 1",name:"Arabų matas"},
+ {id:"p11",lv:2,fen:"2r3k1/5ppp/8/8/8/8/5PPP/2R1Q1K1 w - - 0 1"},
+ {id:"p12",lv:2,fen:"r5k1/8/8/8/8/8/5PPP/6K1 b - - 0 1"},
+ {id:"p13",lv:2,fen:"r1b3kr/ppp3pp/8/8/8/8/PPP2qPP/R1B2R1K b - - 0 1"},
+ {id:"p14",lv:2,fen:"r5rk/6pp/7N/3Q4/8/8/8/6K1 w - - 0 1"},
+ {id:"p15",lv:3,fen:"6k1/8/8/8/8/8/R7/1R4K1 w - - 0 1",name:"Kopėčios"},
+ {id:"p16",lv:3,fen:"r5k1/5ppp/8/8/8/8/1Q3PPP/1R4K1 w - - 0 1"},
+ {id:"p17",lv:3,fen:"r1b2k1r/ppp1bppp/8/1B1Q4/5q2/2P5/PPP2PPP/R3R1K1 w - - 0 1"},
+ {id:"p18",lv:3,fen:"1r4k1/r7/8/8/8/8/8/6K1 b - - 0 1"},
+ {id:"p19",lv:1,fen:"k7/p6B/1R6/8/3K4/8/8/8 w - - 0 1"},
+ {id:"p20",lv:1,fen:"7k/8/7K/8/8/8/8/5R2 w - - 0 1"},
+ {id:"p21",lv:1,fen:"1K1k4/4p3/4Q3/8/8/8/8/N7 w - - 0 1"},
+ {id:"p22",lv:1,fen:"5r2/8/8/8/8/8/8/K1k4b b - - 0 1"},
+ {id:"p23",lv:1,fen:"k7/2K5/8/2R5/8/8/8/8 w - - 0 1"},
+ {id:"p24",lv:1,fen:"k7/pp6/8/8/3N4/3K4/Q7/8 w - - 0 1"},
+ {id:"p25",lv:1,fen:"7k/8/7N/8/8/4K3/8/6Q1 w - - 0 1"},
+ {id:"p26",lv:1,fen:"5K1k/8/8/6R1/8/8/8/8 w - - 0 1"},
+ {id:"p27",lv:1,fen:"k7/pp6/8/8/3K4/8/4R2N/8 w - - 0 1"},
+ {id:"p28",lv:2,fen:"1Q6/4k3/4pp2/8/1rNP4/1PK5/7R/8 w - - 0 1"},
+ {id:"p29",lv:2,fen:"3k4/1p6/1p2q3/2R4p/8/8/r7/3B2K1 b - - 0 1"},
+ {id:"p30",lv:2,fen:"2k5/2pp4/1p6/8/7r/5PN1/Q3P3/4RK2 w - - 0 1"},
+ {id:"p31",lv:2,fen:"4k3/4pp2/8/8/3n4/7Q/6N1/3K4 w - - 0 1"},
+ {id:"p32",lv:2,fen:"3k4/2p1p3/3pQ3/6R1/5n2/8/8/7K w - - 0 1"},
+ {id:"p33",lv:2,fen:"7k/8/6q1/1Q6/8/1R2B3/4n2P/7K b - - 0 1"},
+ {id:"p34",lv:2,fen:"4N2k/p1Q4p/6b1/6r1/8/5P2/K6N/8 w - - 0 1"},
+ {id:"p35",lv:2,fen:"8/1r4k1/8/8/4b3/P2q4/K4R2/8 b - - 0 1"},
+ {id:"p36",lv:2,fen:"4k3/3p1p2/2R5/5bB1/7n/4K3/3P4/1N6 w - - 0 1"},
+ {id:"p37",lv:3,fen:"1k6/p1p5/Qn4r1/r3R3/8/8/5K2/8 w - - 0 1"},
+ {id:"p38",lv:3,fen:"3k4/Qp2pR2/8/1p6/Pp6/8/6K1/8 w - - 0 1"},
+ {id:"p39",lv:3,fen:"2n5/5kp1/1q6/8/8/Q7/r6P/7K b - - 0 1"},
+ {id:"p40",lv:3,fen:"7k/4Q3/8/n5pq/5N1P/8/6K1/8 w - - 0 1"},
+ {id:"p41",lv:3,fen:"3k4/Q1p1pB2/4q2p/8/4R2P/1P6/3PK3/8 w - - 0 1"},
+ {id:"p42",lv:3,fen:"6k1/4nR1p/8/8/2Q5/P1P5/6K1/8 w - - 0 1"},
+ {id:"p43",lv:3,fen:"8/k7/1p6/p7/3Qn3/1R6/8/3K4 w - - 0 1"},
+ {id:"p44",lv:3,fen:"7k/6p1/8/8/2q5/B5K1/8/1B1Q4 w - - 0 1"},
+ {id:"p45",lv:3,fen:"8/2r1k1q1/1pp5/5rN1/8/8/4P3/4K1B1 b - - 0 1"},
+ {id:"p46",lv:3,fen:"7k/2R3pp/8/n7/3q4/6P1/P5P1/4KN2 w - - 0 1"},
+ {id:"p47",lv:3,fen:"6k1/4pppp/7R/8/6R1/8/K7/6R1 w - - 0 1"},
+ {id:"p48",lv:3,fen:"7k/6p1/1q6/3N3b/n7/P7/2B1Q3/5K2 w - - 0 1"}
+];
+const TECH=[
+ {id:"fork",g:"♞",n:"Šakutė",
+  txt:["Viena figūra vienu metu puola dvi ar daugiau priešininko figūrų. Priešininkas gali išgelbėti tik vieną.","Pavojingiausios šakutės – su šachu: priešininkas privalo gelbėti karalių, o tu nukerti antrą figūrą. Žirgas ir valdovė – geriausi šakučių meistrai, bet ir pėstininkas gali."],
+  tip:"Ieškok langelio, iš kurio tavo figūra puls dvi priešininko figūras iš karto.",
+  pz:[{id:"x1",fen:"q3k3/8/8/1N6/8/8/8/4K3 w - - 0 1",ok:["b5c7"],gain:500},
+      {id:"x2",fen:"4k3/8/8/2r1n3/8/3P4/5PPP/R5K1 w - - 0 1",ok:["d3d4"],gain:200},
+      {id:"x3",fen:"r3k3/8/8/8/8/8/8/1Q2K3 w - - 0 1",ok:["b1e4"],gain:400},
+      {id:"x10",fen:"1r2k1b1/8/2p5/8/K2Q4/1P6/8/8 w - - 0 1",ok:["d4e5"],gain:350},
+      {id:"x11",fen:"5k2/2Q2p2/8/4bp2/Nr6/8/8/7K w - - 0 1",ok:["c7c5"],gain:300},
+      {id:"x12",fen:"8/1k6/2N1b3/4p3/8/5P2/1K6/8 w - - 0 1",ok:["c6d8"],gain:300},
+      {id:"x13",fen:"8/6k1/2Q4r/1p1P4/1p4r1/3K4/6P1/8 w - - 0 1",ok:["c6d7"],gain:450},
+      {id:"x14",fen:"3k4/8/8/8/4R3/3b4/K7/8 w - - 0 1",ok:["e4d4"],gain:300},
+      {id:"x15",fen:"4k3/8/4N3/1p5r/1N3P1P/5K2/8/8 w - - 0 1",ok:["e6g7"],gain:450},
+      {id:"x16",fen:"4r3/8/3p4/3N2r1/4k3/8/3PP3/3K4 w - - 0 1",ok:["d5f6"],gain:450},
+      {id:"x17",fen:"8/3r4/3bp3/3N3k/8/2P5/5P2/3K4 w - - 0 1",ok:["d5f6"],gain:450},
+      {id:"x18",fen:"5n2/2k4N/3b4/8/1B6/8/3P1KP1/8 w - - 0 1",ok:["b4d6"],gain:300}]},
+ {id:"pin",g:"♝",n:"Surišimas",
+  txt:["Toli einanti figūra (rikis, bokštas ar valdovė) puola priešininko figūrą, už kurios stovi vertingesnė.","Surišta figūra negali pasitraukti, nes atidengtų karalių ar brangesnę figūrą. Ją galima pulti dar kartą ir laimėti."],
+  tip:"Rask liniją, kurioje priešininko figūra stovi prieš savo karalių.",
+  pz:[{id:"x4",fen:"4k3/4q3/8/8/8/8/5K2/R7 w - - 0 1",ok:["a1e1"],gain:350},
+      {id:"x5",fen:"4k3/3r4/8/8/8/8/8/3RKB2 w - - 0 1",ok:["f1b5"],gain:400},
+      {id:"x19",fen:"8/4k3/8/8/8/3Pn1K1/8/5R2 w - - 0 1",ok:["f1e1"],gain:300},
+      {id:"x20",fen:"8/3b3k/2R5/8/2N5/P5K1/8/8 w - - 0 1",ok:["c6c7"],gain:300},
+      {id:"x21",fen:"8/3k2b1/8/8/7R/5P2/3P4/2K5 w - - 0 1",ok:["h4h7"],gain:300},
+      {id:"x22",fen:"8/3k2np/8/7R/p6K/P7/7P/8 w - - 0 1",ok:["h5h7"],gain:400},
+      {id:"x23",fen:"8/8/7p/3q3k/1K1P4/5P2/8/2R5 w - - 0 1",ok:["c1c5"],gain:350},
+      {id:"x24",fen:"8/7k/8/8/8/P3K2n/5P2/4R3 w - - 0 1",ok:["e1h1"],gain:300},
+      {id:"x25",fen:"k7/8/6B1/3r4/7K/7P/4P3/8 w - - 0 1",ok:["g6e4"],gain:450},
+      {id:"x26",fen:"8/1R6/8/2b3k1/4P3/5P2/4K3/8 w - - 0 1",ok:["b7b5"],gain:300}]},
+ {id:"skewer",g:"♜",n:"Kiaurinis smūgis",
+  txt:["Tai atvirkščias surišimas: puolama vertingesnė figūra (dažnai karalius), o už jos stovi kita.","Kai puolama figūra pasitraukia, linija atsiveria ir tu nukerti už jos stovėjusią figūrą."],
+  tip:"Paskelbk šachą išilgai linijos, kurioje už karaliaus stovi brangi figūra.",
+  pz:[{id:"x6",fen:"4q3/8/4k3/8/8/8/8/R5K1 w - - 0 1",ok:["a1e1"],gain:350},
+      {id:"x7",fen:"6q1/8/8/3k4/8/8/8/1BK5 w - - 0 1",ok:["b1a2"],gain:500},
+      {id:"x27",fen:"5r2/p7/3k4/8/p2K2P1/P7/8/4Q3 w - - 0 1",ok:["e1b4"],gain:450},
+      {id:"x28",fen:"1q2k3/2p5/8/8/3pP1R1/8/4P3/4R2K w - - 0 1",ok:["g4g8"],gain:850},
+      {id:"x29",fen:"q7/2n5/3p4/2Nk4/8/1P2P3/2B3P1/4K3 w - - 0 1",ok:["c2e4"],gain:200},
+      {id:"x30",fen:"8/2k3r1/1p6/8/8/8/8/R1K5 w - - 0 1",ok:["a1a7"],gain:450},
+      {id:"x31",fen:"8/1Qp5/3P4/3qr3/N1kp4/K7/P7/8 w - - 0 1",ok:["b7b3"],gain:99950},
+      {id:"x32",fen:"4r3/6p1/8/8/3pk3/8/2K5/3R4 w - - 0 1",ok:["d1e1"],gain:450},
+      {id:"x33",fen:"4q3/2p5/p7/4k3/2P5/6b1/8/1K3Q2 w - - 0 1",ok:["f1e2"],gain:750},
+      {id:"x34",fen:"1q6/1k6/7p/R7/8/8/8/3B3K w - - 0 1",ok:["a5b5"],gain:350}]},
+ {id:"disc",g:"♛",n:"Atidengtas puolimas",
+  txt:["Pajudinus vieną figūrą, atsiveria kitos tavo figūros puolimo linija. Taip vienu ėjimu atsiranda dvi grėsmės.","Stipriausias variantas – atidengtas šachas: priešininkas privalo gintis nuo šacho, o paėjusi figūra laisvai puola ką nori."],
+  tip:"Patrauk figūrą, kuri užstoja tavo bokštą, ir kartu pulk kažką vertingo.",
+  pz:[{id:"x8",fen:"4k3/8/8/8/2q5/8/4B3/4R1K1 w - - 0 1",ok:["e2d3","e2c4","e2f1"],gain:500},
+      {id:"x9",fen:"4k3/8/2q5/8/8/8/4N3/4R1K1 w - - 0 1",ok:["e2d4"],gain:500},
+      {id:"x35",fen:"8/1k1q4/8/7p/8/1N6/PQ6/K7 w - - 0 1",ok:["b3c5"],gain:550},
+      {id:"x36",fen:"8/3b2R1/8/6N1/1p3pk1/8/P7/4K3 w - - 0 1",ok:["g5h7"],gain:300},
+      {id:"x37",fen:"8/5k2/1pq5/8/4p3/5N2/8/5R1K w - - 0 1",ok:["f3d4","f3e5"],gain:350},
+      {id:"x38",fen:"2k5/p4b2/2N5/2R5/8/8/5K2/8 w - - 0 1",ok:["c6e5"],gain:300},
+      {id:"x39",fen:"8/4p3/1nr2k2/5N2/7p/1P3R2/8/3K4 w - - 0 1",ok:["f5d4"],gain:450},
+      {id:"x40",fen:"3q4/7n/8/8/7k/7N/8/K6R w - - 0 1",ok:["h3g1"],gain:300},
+      {id:"x41",fen:"5R2/5N1r/8/8/8/P3Pk2/8/3K4 w - - 0 1",ok:["f7g5"],gain:350},
+      {id:"x42",fen:"3r4/4kp2/5R2/1p6/7Q/4r3/K3P3/8 w - - 0 1",ok:["f6f3"],gain:450}]}
+];
+const TPZ=[];TECH.forEach(t=>t.pz.forEach((p,i)=>{p.tech=t;p.n=i+1;TPZ.push(p)}));
+const LV={1:{n:"Lengvos",task:"Matas vienu ėjimu",xp:20},2:{n:"Vidutinės",task:"Matas vienu ėjimu",xp:25},3:{n:"Sunkios",task:"Matas dviem ėjimais",xp:35}};
+const ACH=[
+ {id:"first_lesson",g:"♟",n:"Pirmas žingsnis",d:"Baigei pirmą pamoką"},
+ {id:"course",g:"♞",n:"Absolventas",d:"Baigei visą mokymosi kursą"},
+ {id:"lessons10",g:"♟",n:"Taisyklių žinovas",d:"Baigei 10 pamokų"},
+ {id:"lessons50",g:"♜",n:"Pusė kelio",d:"Baigei 50 pamokų"},
+ {id:"all_lessons",g:"♚",n:"Visos pamokos",d:"Baigei visas 150 pamokų"},
+ {id:"first_puzzle",g:"♛",n:"Pirmas matas",d:"Išsprendei pirmą užduotį"},
+ {id:"puzzles10",g:"♜",n:"Dešimt matų",d:"Išsprendei 10 užduočių"},
+ {id:"hard_all",g:"♝",n:"Dviejų ėjimų meistras",d:"Visos sunkios užduotys"},
+ {id:"clean5",g:"♞",n:"Švarus darbas",d:"5 užduotys iš eilės be klaidų ir užuominų"},
+ {id:"streak3",g:"🔥",n:"Trijų dienų ugnis",d:"Tikslas pasiektas 3 dienas iš eilės"},
+ {id:"streak7",g:"🔥",n:"Savaitės ritmas",d:"Tikslas pasiektas 7 dienas iš eilės"},
+ {id:"bot_win",g:"♚",n:"Įveikei robotą",d:"Laimėjai partiją"},
+ {id:"bot_win2",g:"♛",n:"Rimta pergalė",d:"Laimėjai prieš stipresnį robotą"},
+ {id:"first_tactic",g:"♞",n:"Pirmas triukas",d:"Išsprendei pirmą taktikos užduotį"},
+ {id:"tactics_all",g:"♝",n:"Taktikas",d:"Įvaldei visus keturis metodus"},
+ {id:"elo1000",g:"♜",n:"Tūkstantis",d:"Pasiekei 1000 Elo"},
+ {id:"elo1200",g:"♛",n:"Klubo žaidėjas",d:"Pasiekei 1200 Elo"},
+ {id:"rank4",g:"♜",n:"Bokšto aukštis",d:"Pasiekei bokšto rangą"},
+ {id:"rank6",g:"♚",n:"Karūna",d:"Pasiekei karaliaus rangą"},
+ {id:"skin1",g:"💎",n:"Naujas stilius",d:"Įsigijai pirmą figūrų rinkinį"},
+ {id:"skin3",g:"💎",n:"Kolekcininkas",d:"Įsigijai 3 figūrų rinkinius"},
+ {id:"skin_max",g:"💎",n:"Imperatorius",d:"Įsigijai „Imperatoriaus“ rinkinį"}
+];
+
+/* ---------- state & persistence ---------- */
+const LSK="ejimas-po-ejimo-v1";
+function blank(){return {xp:0,lessons:{},puzzles:{},daily:{},goal:50,games:{w:0,d:0,l:0},ach:{},clean:0,tactics:{},elo:800,eloPeak:800,eloHist:[],rated:0,gems:0,skins:["classic"],skin:"classic",updatedAt:0}}
+let S=blank();
+try{const raw=localStorage.getItem(LSK);if(raw){S=Object.assign(blank(),JSON.parse(raw))}}catch(e){}
+let dbRef=null,dbTimer=null;
+function save(){
+  S.updatedAt=Date.now();
+  try{localStorage.setItem(LSK,JSON.stringify(S))}catch(e){}
+  if(dbRef){clearTimeout(dbTimer);dbTimer=setTimeout(()=>{dbRef.set({json:JSON.stringify(S),updatedAt:S.updatedAt}).then(()=>setSync("Progresas išsaugotas tavo paskyroje.")).catch(()=>setSync("Progresas išsaugotas šiame įrenginyje."))},800)}
+}
+function setSync(t){$("sync").textContent=t}
+setSync("Progresas saugomas šiame įrenginyje.");
+(async function initDb(){
+  try{
+    if(!window.claude||!window.claude.use)return;
+    const db=await window.claude.use("db");const user=await window.claude.use("user");
+    if(!db||!user)return;
+    const uid=await user.id();if(!uid)return;
+    const ref=db.doc("data/users/"+uid+"/progress");
+    const snap=await ref.get();
+    if(snap.exists){
+      const d=snap.data();
+      try{const remote=Object.assign(blank(),JSON.parse(d.json||"{}"));
+        if((remote.updatedAt||0)>(S.updatedAt||0)){S=remote;try{localStorage.setItem(LSK,JSON.stringify(S))}catch(e){}renderAll()}}catch(e){}
+    }
+    dbRef=ref;
+    if(!snap.exists||(S.updatedAt||0)>((snap.data()||{}).updatedAt||0)){await ref.set({json:JSON.stringify(S),updatedAt:S.updatedAt||Date.now()})}
+    setSync("Progresas išsaugotas tavo paskyroje.");
+  }catch(e){}
+})();
+
+/* ---------- dates, levels, streak ---------- */
+function dkey(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function daysAgo(n){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-n);return d}
+function rankIdx(xp){let i=0;RANKS.forEach((r,k)=>{if(xp>=r.xp)i=k});return i}
+function todayXp(){return S.daily[dkey()]||0}
+function streak(){
+  let n=0,start=(todayXp()>=S.goal)?0:1;
+  for(let i=start;i<400;i++){if((S.daily[dkey(daysAgo(i))]||0)>=S.goal)n++;else break}
+  return n;
+}
+function plural(n,one,few,many){const m10=n%10,m100=n%100;if(m10===1&&m100!==11)return one;if(m10>=2&&m10<=9&&(m100<10||m100>=20))return few;return many}
+
+/* ---------- rewards ---------- */
+function toast(t,cls){const el=document.createElement("div");el.className="toast "+(cls||"");el.textContent=t;$("toasts").appendChild(el);setTimeout(()=>el.remove(),2600)}
+function award(xp,label){
+  const before=rankIdx(S.xp);
+  const goalBefore=todayXp()>=S.goal;
+  S.xp+=xp;const k=dkey();S.daily[k]=(S.daily[k]||0)+xp;
+  if(xp>0)toast("+"+xp+" XP"+(label?": "+label:""),"xp");
+  if(!goalBefore&&todayXp()>=S.goal)setTimeout(()=>toast("Dienos tikslas pasiektas!"),400);
+  checkAch();save();renderAll();
+  const after=rankIdx(S.xp);
+  if(after>before)promote(before,after);
+}
+function unlock(id){if(S.ach[id])return;S.ach[id]=dkey();const a=ACH.find(x=>x.id===id);setTimeout(()=>toast("Apdovanojimas: "+a.n),900)}
+function checkAch(){
+  const L=Object.keys(S.lessons).length;
+  const P=Object.values(S.puzzles).filter(p=>p.solved).length;
+  if(L>=1)unlock("first_lesson");
+  if(S.ach.all_lessons&&L<LESSONS.length)delete S.ach.all_lessons;
+  if(L>=10)unlock("lessons10");if(L>=50)unlock("lessons50");if(L>=LESSONS.length)unlock("all_lessons");
+  if(P>=1)unlock("first_puzzle");
+  if(P>=10)unlock("puzzles10");
+  if(PUZZLES.filter(p=>p.lv===3).every(p=>S.puzzles[p.id]&&S.puzzles[p.id].solved))unlock("hard_all");
+  if(S.clean>=5)unlock("clean5");
+  const st=streak();if(st>=3)unlock("streak3");if(st>=7)unlock("streak7");
+  if(S.games.w>=1)unlock("bot_win");
+  if(S.games.w2)unlock("bot_win2");
+  const TX=TPZ.filter(p=>S.tactics[p.id]&&S.tactics[p.id].solved).length;
+  if(TX>=1)unlock("first_tactic");if(TX>=TPZ.length)unlock("tactics_all");
+  if(S.elo>=1000)unlock("elo1000");if(S.elo>=1200)unlock("elo1200");
+  const own=(S.skins||[]).filter(x=>x!=="classic").length;if(own>=1)unlock("skin1");if(own>=3)unlock("skin3");if((S.skins||[]).includes("emperor"))unlock("skin_max");
+  const r=rankIdx(S.xp);if(r>=3)unlock("rank4");if(r>=5)unlock("rank6");
+}
+function promote(a,b){
+  $("promo-old").textContent=g(RANKS[a].g);$("promo-new").textContent=g(RANKS[b].g);
+  $("promo-p").textContent="Tavo pėstininkas žengė toliau. Dabar tu – "+RANKS[b].n.toLowerCase()+"!";
+  const p=$("promo");p.classList.remove("on");void p.offsetWidth;p.classList.add("on");$("promo-ok").focus();
+}
+$("promo-ok").onclick=()=>$("promo").classList.remove("on");
+
+/* ---------- chess helpers ---------- */
+function matingMoves(c){const out=[];for(const m of c.moves({verbose:true})){c.move(m);if(c.in_checkmate())out.push(m);c.undo()}return out}
+function forcesMate(c,m){ // after our move m (not yet played) does every reply allow mate?
+  c.move(m);
+  if(c.in_checkmate()){c.undo();return true}
+  if(c.game_over()){c.undo();return false}
+  let ok=true;
+  for(const r of c.moves({verbose:true})){c.move(r);const has=matingMoves(c).length>0;c.undo();if(!has){ok=false;break}}
+  c.undo();return ok;
+}
+
+/* ---------- board ---------- */
+function Board(el,opts){
+  const self=this;this.el=el;this.c=new Chess();this.flip=false;this.sel=null;this.last=null;this.hint=null;this.locked=false;this.canMove=opts.canMove||(()=>true);this.onMove=opts.onMove||(()=>{});
+  const sqs=[];
+  for(let i=0;i<64;i++){const b=document.createElement("button");b.className="sq";b.type="button";b.addEventListener("click",()=>self.tap(b.dataset.s));el.appendChild(b);sqs.push(b)}
+  this.sqs=sqs;
+}
+Board.prototype.load=function(fen){this.c.load(fen);this.sel=null;this.last=null;this.hint=null;this.render()};
+Board.prototype.render=function(){
+  const files="abcdefgh";const c=this.c;
+  let targets={};
+  if(this.sel){for(const m of c.moves({square:this.sel,verbose:true}))targets[m.to]=!!m.captured||m.flags.indexOf("e")>=0}
+  let checkSq=null;
+  if(c.in_check()){const t=c.turn();for(let f=0;f<8;f++)for(let r=1;r<=8;r++){const s=files[f]+r;const p=c.get(s);if(p&&p.type==="k"&&p.color===t)checkSq=s}}
+  for(let i=0;i<64;i++){
+    const row=Math.floor(i/8),col=i%8;
+    const f=this.flip?7-col:col,r=this.flip?row+1:8-row;
+    const s=files[f]+r;const b=this.sqs[i];b.dataset.s=s;
+    let cls="sq "+(((f+r)%2===1)?"l":"d");
+    if(this.last&&(this.last.from===s||this.last.to===s))cls+=" last";
+    if(this.sel===s)cls+=" sel";
+    if(this.hint===s)cls+=" hint";
+    if(checkSq===s)cls+=" check";
+    if(s in targets)cls+=targets[s]?" tc":" t";
+    b.className=cls;
+    const p=c.get(s);
+    let html=p?'<span class="pc '+p.color+' p'+p.type+'">'+g(GL[p.type])+"</span>":"";
+    if(col===7)html+='<span class="coord r" style="left:auto;right:3px">'+r+"</span>";
+    if(row===7)html+='<span class="coord f" style="right:auto;left:3px">'+files[f]+"</span>";
+    b.innerHTML=html;
+    b.setAttribute("aria-label",s+(p?" "+(p.color==="w"?"baltas ":"juodas ")+p.type:""));
+  }
+};
+Board.prototype.tap=function(s){
+  if(this.locked)return;const c=this.c;const p=c.get(s);
+  if(this.sel&&this.sel!==s){
+    const mv=c.moves({square:this.sel,verbose:true}).find(m=>m.to===s);
+    if(mv){const from=this.sel;this.sel=null;const self=this;
+      const finish=(pr)=>{const done=c.move({from:from,to:s,promotion:pr||"q"});self.last=done;self.hint=null;self.render();self.onMove(done)};
+      if(mv.flags.indexOf("p")>=0){this.render();this.locked=true;pickPromotion(c.turn(),pr=>{self.locked=false;if(!pr){self.render();return}finish(pr)});return}
+      finish("q");return}
+  }
+  if(p&&p.color===c.turn()&&this.canMove()){this.sel=(this.sel===s)?null:s}else{this.sel=null}
+  this.render();
+};
+function pickPromotion(color,cb){
+  const box=$("pp-b");const names={q:"Valdovė",r:"Bokštas",b:"Rikis",n:"Žirgas"};
+  box.className="ppb skin-"+(S.skin||"classic");
+  box.innerHTML=["q","r","b","n"].map(t=>'<button type="button" data-p="'+t+'"><span class="pc '+color+' p'+t+'">'+g(GL[t])+"</span><small>"+names[t]+"</small></button>").join("");
+  const dlg=$("pp");dlg.classList.toggle("flip",D.on&&color==="b");dlg.classList.add("on");
+  const done=(v)=>{dlg.classList.remove("on");cb(v)};
+  box.querySelectorAll("button").forEach(b=>b.onclick=()=>done(b.dataset.p));
+  $("pp-x").onclick=()=>done(null);
+  box.querySelector("button").focus();
+}
+Board.prototype.shake=function(){this.el.classList.remove("shake");void this.el.offsetWidth;this.el.classList.add("shake")};
+
+/* ---------- trainer (lessons & puzzles) ---------- */
+let T={kind:null,item:null,attempts:0,hint:false,phase:1,done:false,from:"lessons"};
+const tb=new Board($("t-board"),{canMove:()=>!T.done&&T.phase!==0,onMove:onTrainerMove});
+function status(el,txt,cls){const s=$(el);s.textContent=txt;s.className="status"+(cls?" "+cls:"")}
+function openLesson(id){
+  const L=LESSONS.find(x=>x.id===id);T={kind:"lesson",item:L,attempts:0,hint:false,phase:1,done:false,from:"lessons"};
+  $("t-kicker").textContent=MODS[L.m]+": pamoka "+(LESSONS.indexOf(L)+1)+" iš "+LESSONS.length;
+  $("t-title").textContent=L.t;
+  $("t-text").innerHTML=L.txt.map(t=>"<p>"+t+"</p>").join("");
+  tb.flip=L.fen.split(" ")[1]==="b";tb.load(L.fen);
+  if(L.goal&&L.goal.ok){T.tac={ok:L.goal.ok,gain:L.goal.gain,tip:L.task};T.side=tb.c.turn();T.start=material(tb.c,T.side)}
+  status("t-status",L.task+" Paliesk figūrą, tada langelį.");
+  $("t-hint").hidden=false;$("t-next").disabled=true;$("t-next").textContent="Kita pamoka";
+  go("trainer");
+}
+function openPuzzle(id){
+  const P=PUZZLES.find(x=>x.id===id);T={kind:"puzzle",item:P,attempts:0,hint:false,phase:1,done:false,from:"puzzles"};
+  const n=PUZZLES.filter(x=>x.lv===P.lv).indexOf(P)+1;
+  $("t-kicker").textContent=LV[P.lv].n+" užduotys, Nr. "+n;
+  $("t-title").textContent=(P.name?P.name+": ":"")+LV[P.lv].task.toLowerCase().replace(/^./,m=>m.toUpperCase());
+  const side=P.fen.split(" ")[1]==="w"?"Baltieji":"Juodieji";
+  $("t-text").innerHTML="<p>"+side+" eina ir laimi. "+(P.lv===3?"Rask ėjimą, po kurio bet koks priešininko atsakymas leis paskelbti matą.":"Rask ėjimą, po kurio priešininko karalius neturi išeities.")+"</p>";
+  tb.flip=P.fen.split(" ")[1]==="b";tb.load(P.fen);
+  status("t-status",side+" eina.");
+  $("t-hint").hidden=false;$("t-next").disabled=true;$("t-next").textContent="Kita užduotis";
+  go("trainer");
+}
+function openTactic(id){
+  const P=TPZ.find(x=>x.id===id);T={kind:"tactic",item:P,attempts:0,hint:false,phase:1,done:false,from:"tactics",start:0};
+  $("t-kicker").textContent="Taktika: "+P.tech.n.toLowerCase()+", "+P.n+" iš "+P.tech.pz.length;
+  $("t-title").textContent=P.tech.n;
+  $("t-text").innerHTML="<p>"+P.tech.txt[0]+"</p><p>"+P.tech.tip+" Laimėk medžiagą.</p>";
+  tb.flip=P.fen.split(" ")[1]==="b";tb.load(P.fen);
+  T.side=tb.c.turn();T.start=material(tb.c,T.side);T.tac={ok:P.ok,gain:P.gain,tip:P.tech.tip};
+  status("t-status",(T.side==="w"?"Baltieji":"Juodieji")+" eina ir laimi medžiagą.");
+  $("t-hint").hidden=false;$("t-next").disabled=true;$("t-next").textContent="Kita užduotis";
+  go("trainer");
+}
+const MV={p:100,n:320,b:330,r:500,q:900,k:0};
+function material(c,side){let s=0;for(const row of c.board())for(const p of row){if(p)s+=(p.color===side?1:-1)*MV[p.type]}return s}
+function secureGain(c,side,start){ // opponent to move: material after their best capture
+  if(c.in_checkmate())return 99999;let worst=material(c,side);
+  for(const m of c.moves({verbose:true})){if(!m.captured)continue;c.move(m);const v=material(c,side);c.undo();if(v<worst)worst=v}
+  return worst-start;
+}
+function nmMat(c,d,a,b){const ms=c.moves({verbose:true});if(!ms.length)return c.in_check()?-99999:0;if(d===0)return material(c,c.turn());
+  ms.sort((x,y)=>(y.captured?MV[y.captured]:0)-(x.captured?MV[x.captured]:0));let best=-Infinity;
+  for(const m of ms){c.move(m);const v=-nmMat(c,d-1,-b,-a);c.undo();if(v>best)best=v;if(v>a)a=v;if(a>=b)break}return best}
+function tacticMove(m){
+  const P=T.tac;const c=tb.c;const fin=T.kind==="lesson"?finishLesson:finishTactic;
+  if(T.phase===1&&P.ok.indexOf(m.from+m.to)<0)return wrong("Šis ėjimas medžiagos nelaimi. "+P.tip);
+  if(secureGain(c,T.side,T.start)>=P.gain)return fin();
+  if(T.phase>=3)return wrong("Taip medžiagos dar nelaimėsi. Kurią figūrą dabar gali saugiai nukirsti?");
+  if(T.phase>1){return wrong("Taip medžiagos dar nelaimėsi. Kurią figūrą dabar gali saugiai nukirsti?")}
+  T.phase=0;tb.locked=true;status("t-status","Puikus ėjimas! Priešininkas gelbstisi…","ok");
+  setTimeout(()=>{let br=null,bv=-Infinity;for(const r of c.moves({verbose:true})){c.move(r);const v=-nmMat(c,2,-Infinity,Infinity);c.undo();if(v>bv){bv=v;br=r}}
+    tb.last=c.move(br);tb.locked=false;T.phase=2;tb.render();status("t-status","Priešininkas paėjo "+br.san+". Dabar pasiimk savo grobį.")},700);
+}
+function finishTactic(){
+  T.done=true;tb.render();const P=T.item;const rec=S.tactics[P.id]||{solved:false};const clean=T.attempts===0&&!T.hint;
+  let xp,lab;if(!rec.solved){xp=T.hint?15:30;if(clean){xp+=5;lab="iš pirmo karto"}else lab="taktika"}else{xp=3;lab="pakartojimas"}
+  rec.solved=true;if(clean)rec.clean=true;S.tactics[P.id]=rec;S.clean=clean?(S.clean||0)+1:0;
+  status("t-status","Medžiaga laimėta! Tai buvo "+P.tech.n.toLowerCase()+".","ok");award(xp,lab);courseCheck();$("t-next").disabled=false;
+}
+function wrong(msg){
+  T.attempts++;tb.shake();status("t-status",msg||"Ne visai. Pabandyk dar kartą.","bad");
+  tb.locked=true;setTimeout(()=>{tb.c.undo();tb.last=null;tb.locked=false;tb.render()},650);
+}
+function onTrainerMove(m){
+  const it=T.item;
+  if(T.kind==="tactic"||(T.kind==="lesson"&&T.tac))return tacticMove(m);
+  if(T.kind==="lesson"&&it.goal!=="mate2"){
+    let ok;
+    if(it.goal==="mate")ok=tb.c.in_checkmate();
+    else ok=it.goal.some(([a,b,pr])=>a===m.from&&b===m.to&&(!pr||m.promotion===pr));
+    if(!ok&&it.goal==="mate"&&tb.c.in_stalemate())return wrong("Patas! Priešininkas neturi ėjimų, bet jam nėra šacho, todėl būtų lygiosios. Bandyk dar.");
+    if(!ok)return wrong(it.goal==="mate"?"Tai ne matas. Ieškok ėjimo, po kurio karalius neturi kur trauktis.":"Ne tas ėjimas. Perskaityk paaiškinimą ir bandyk dar.");
+    finishLesson();return;
+  }
+  const finishM=T.kind==="lesson"?finishLesson:finishPuzzle;const isM2=T.kind==="lesson"||it.lv===3;
+  // puzzle
+  if(!isM2||T.phase===2){
+    if(tb.c.in_checkmate())return finishM();
+    if(T.phase===2){ // allow retry of second move
+      return wrong("Dar ne matas. Pagalvok, kuris langelis paliko karaliui išeitį.");
+    }
+    return wrong();
+  }
+  // mate-in-2, phase 1
+  tb.c.undo();const ok=forcesMate(tb.c,m);tb.c.move(m);
+  if(!ok)return wrong("Priešininkas po šio ėjimo išsisuks. Ieškok stipresnio.");
+  if(tb.c.in_checkmate())return finishM();
+  T.phase=0;status("t-status","Geras ėjimas! Priešininkas atsako…","ok");tb.locked=true;
+  setTimeout(()=>{
+    const rs=tb.c.moves({verbose:true});const r=rs[Math.floor(Math.random()*rs.length)];
+    tb.last=tb.c.move(r);tb.locked=false;T.phase=2;tb.render();
+    status("t-status","Priešininkas paėjo "+r.san+". Dabar paskelbk matą.");
+  },700);
+}
+function finishLesson(){
+  T.done=true;tb.render();const L=T.item;const first=!S.lessons[L.id];
+  status("t-status",tb.c.in_checkmate()?"Matas! Pamoka baigta.":T.tac?"Medžiaga laimėta! Pamoka baigta.":"Puiku! Pamoka baigta.","ok");
+  if(first){S.lessons[L.id]=dkey();award(25,"pamoka");courseCheck()}else{save();renderAll()}
+  $("t-next").disabled=false;
+}
+function finishPuzzle(){
+  T.done=true;tb.render();const P=T.item;const rec=S.puzzles[P.id]||{solved:false,tries:0};
+  const clean=T.attempts===0&&!T.hint;
+  let xp,lab;
+  if(!rec.solved){xp=LV[P.lv].xp;if(T.hint)xp=Math.round(xp/2);if(clean){xp+=5;lab="iš pirmo karto"}else lab="užduotis"}else{xp=3;lab="pakartojimas"}
+  rec.solved=true;rec.tries=(rec.tries||0)+T.attempts+1;if(clean)rec.clean=true;S.puzzles[P.id]=rec;
+  S.clean=clean?(S.clean||0)+1:0;
+  status("t-status","Matas! "+(clean?"Iš pirmo karto.":"Išspręsta."),"ok");
+  award(xp,lab);courseCheck();$("t-next").disabled=false;
+}
+function courseCheck(){
+  if(S.courseDone)return;
+  const all=LESSONS.every(l=>S.lessons[l.id])&&PUZZLES.every(p=>S.puzzles[p.id]&&S.puzzles[p.id].solved)&&TPZ.every(p=>S.tactics[p.id]&&S.tactics[p.id].solved);
+  if(!all)return;
+  S.courseDone=true;unlock("course");const need=RANKS[1].xp-S.xp;
+  setTimeout(()=>{toast("Kursas baigtas! Sveikiname!");if(need>0)award(need,"kurso baigimas");else{save();renderAll()}},1200);
+}
+$("t-reset").onclick=()=>{if(T.kind==="lesson")openLesson(T.item.id);else if(T.kind==="tactic"){const a=T.attempts,h=T.hint;openTactic(T.item.id);T.attempts=a;T.hint=h}else{const keepA=T.attempts,keepH=T.hint;openPuzzle(T.item.id);T.attempts=keepA;T.hint=keepH}};
+$("t-hint").onclick=()=>{
+  if(T.done)return;let from=null;const c=tb.c;
+  if(T.kind==="tactic"||(T.kind==="lesson"&&T.tac)){
+    if(T.phase===1)from=T.tac.ok[0].slice(0,2);
+    else{let bg=-Infinity;for(const m of c.moves({verbose:true})){c.move(m);const v=secureGain(c,T.side,T.start);c.undo();if(v>bg){bg=v;from=m.from}}}
+    if(from){T.hint=true;tb.hint=from;tb.render();status("t-status","Užuomina: ėjimą daro paryškinta figūra. Atlygis sumažėja.")}return;
+  }
+  const isM2=T.kind==="lesson"?T.item.goal==="mate2":T.item.lv===3;
+  if(T.kind==="lesson"&&!isM2){if(T.item.goal==="mate")from=(matingMoves(c)[0]||{}).from;else from=T.item.goal[0][0]}
+  else if(!isM2||T.phase===2){from=(matingMoves(c)[0]||{}).from}
+  else{for(const m of c.moves({verbose:true})){if(forcesMate(c,m)){from=m.from;break}}}
+  if(from){tb.hint=from;tb.render();if(T.kind==="puzzle"){T.hint=true;status("t-status","Užuomina: ėjimą daro paryškinta figūra. Atlygis sumažėja per pusę.")}else status("t-status","Užuomina: pradėk nuo paryškintos figūros.")}
+};
+$("t-next").onclick=()=>{
+  if(T.kind==="tactic"){const i=TPZ.indexOf(T.item);const n=TPZ[i+1];if(n)openTactic(n.id);else go("tactics");return}
+  if(T.kind==="lesson"){const i=LESSONS.indexOf(T.item);const n=LESSONS[i+1];if(n)openLesson(n.id);else go("lessons")}
+  else{const i=PUZZLES.indexOf(T.item);const rest=PUZZLES.slice(i+1).concat(PUZZLES.slice(0,i+1));const n=rest.find(p=>!(S.puzzles[p.id]&&S.puzzles[p.id].solved))||PUZZLES[(i+1)%PUZZLES.length];openPuzzle(n.id)}
+};
+$("t-back").onclick=()=>go(T.from);
+
+/* ---------- play vs bot ---------- */
+const VAL={p:100,n:320,b:330,r:500,q:900,k:0};
+function evalB(c){let s=0;const b=c.board();for(let r=0;r<8;r++)for(let f=0;f<8;f++){const p=b[r][f];if(!p)continue;let v=VAL[p.type];const cen=(3.5-Math.abs(f-3.5))+(3.5-Math.abs(r-3.5));if(p.type==="n"||p.type==="b")v+=cen*4;if(p.type==="p")v+=(p.color==="w"?(6-r):(r-1))*6+(f>=2&&f<=5?cen*2:0);s+=p.color==="w"?v:-v}return s}
+function negamax(c,d,a,b,col){if(d===0)return col*evalB(c);const ms=c.moves({verbose:true});if(!ms.length)return c.in_check()?-100000-d:0;if(c.in_draw())return 0;ms.sort((x,y)=>(y.captured?VAL[y.captured]:0)-(x.captured?VAL[x.captured]:0));let best=-Infinity;for(const m of ms){c.move(m);const v=-negamax(c,d-1,-b,-a,-col);c.undo();if(v>best)best=v;if(v>a)a=v;if(a>=b)break}return best}
+function botParams(e){
+  if(e<600)return{d:1,j:150,r:.3};if(e<800)return{d:1,j:70,r:.15};if(e<1000)return{d:2,j:60,r:.07};
+  if(e<1200)return{d:2,j:25,r:.03};if(e<1400)return{d:3,j:30,r:.01};if(e<1600)return{d:3,j:12,r:0};return{d:3,j:3,r:0};
+}
+function botMove(c,elo){const P=botParams(elo);const all=c.moves({verbose:true});
+  if(Math.random()<P.r)return all[Math.floor(Math.random()*all.length)];
+  const depth=P.d,jit=P.j;const col=c.turn()==="w"?1:-1;let best=null,bv=-Infinity;for(const m of c.moves({verbose:true})){c.move(m);const v=-negamax(c,depth-1,-Infinity,Infinity,-col)+(Math.random()*2-1)*jit;c.undo();if(v>bv){bv=v;best=m}}return best}
+let G={on:false,off:0,botElo:800,color:"w",thinking:false,moves:0};
+function clampElo(e){return Math.max(400,Math.min(2000,Math.round(e)))}
+const gb=new Board($("g-board"),{canMove:()=>G.on&&!G.thinking&&gb.c.turn()===G.color,onMove:onPlayerMove});
+/* ---------- two players, one phone ---------- */
+const START="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+const D={on:false,over:false,offer:null,clock:0,t:{w:0,b:0},last:0,timer:null,started:false,ask:null,res:null,wl:null};
+const db=new Board($("d-board"),{canMove:()=>D.on&&!D.over&&!D.offer,onMove:onDuoMove});
+$("d-board").classList.add("duo-board");db.load(START);
+function fmt(ms){const s=Math.ceil(ms/1000);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+function startDuo(){
+  D.on=true;D.over=false;D.offer=null;D.started=false;D.ask=null;D.res=null;D.t={w:D.clock*60000,b:D.clock*60000};
+  db.load(START);$("v-duo").classList.add("on");document.body.style.overflow="hidden";
+  try{if(navigator.wakeLock)navigator.wakeLock.request("screen").then(w=>{D.wl=w}).catch(()=>{})}catch(e){}
+  clearInterval(D.timer);D.timer=setInterval(tick,250);renderDuo();
+}
+function exitDuo(){D.on=false;clearInterval(D.timer);$("v-duo").classList.remove("on");document.body.style.overflow="";try{D.wl&&D.wl.release()}catch(e){}D.wl=null}
+function tick(){
+  if(!D.on||D.over||!D.clock||!D.started)return;
+  const now=Date.now(),s=db.c.turn();D.t[s]-=now-D.last;D.last=now;
+  if(D.t[s]<=0){D.t[s]=0;endDuo(s==="w"?"b":"w","baigėsi laikas");return}
+  renderClocks();
+}
+function renderClocks(){["w","b"].forEach(s=>{const el=$("dc-"+s);if(el){el.textContent=fmt(D.t[s]);el.classList.toggle("low",D.t[s]<30000)}})}
+function onDuoMove(){
+  if(!D.started)D.started=true;D.last=Date.now();D.offer=null;D.ask=null;const c=db.c;
+  if(c.in_checkmate())endDuo(c.turn()==="w"?"b":"w","matas");
+  else if(c.in_stalemate())endDuo("d","patas");
+  else if(c.in_threefold_repetition())endDuo("d","tris kartus pasikartojusi pozicija");
+  else if(c.insufficient_material())endDuo("d","nepakanka medžiagos matui");
+  else if(c.in_draw())endDuo("d","50 ėjimų taisyklė");
+  else renderDuo();
+}
+function endDuo(w,why){D.over=true;D.res={w,why};D.offer=null;D.ask=null;renderDuo()}
+function capInfo(){
+  const cnt={w:{p:0,n:0,b:0,r:0,q:0},b:{p:0,n:0,b:0,r:0,q:0}};
+  for(const row of db.c.board())for(const p of row){if(p&&p.type!=="k")cnt[p.color][p.type]++}
+  const init={p:8,n:2,b:2,r:2,q:1},val={p:1,n:3,b:3,r:5,q:9};let mw=0,mb=0;
+  const lost={w:"",b:""};
+  ["w","b"].forEach(c=>{["q","r","b","n","p"].forEach(t=>{const k=Math.max(0,init[t]-cnt[c][t]);lost[c]+=g(GL[t]).repeat(k)});});
+  for(const t in val){mw+=cnt.w[t]*val[t];mb+=cnt.b[t]*val[t]}
+  return {lost,diff:mw-mb};
+}
+function renderDuo(){
+  if(!D.on)return;const c=db.c,turn=c.turn(),ci=capInfo();
+  ["w","b"].forEach(s=>{
+    const o=s==="w"?"b":"w",el=$("dp-"+s);let st="",cls="",btns="";
+    if(D.over){const r=D.res;if(r.w==="d"){st="Lygiosios: "+r.why+"."}else if(r.w===s){st="Laimėjai! ("+r.why+")";cls="ok"}else{st="Pralaimėjai ("+r.why+").";cls="bad"}
+      btns='<button class="btn primary" data-a="new">Nauja partija</button><button class="btn" data-a="exit">Išeiti</button>'}
+    else if(D.offer===o){st="Priešininkas siūlo lygiąsias.";btns='<button class="btn primary" data-a="accept">Priimti</button><button class="btn" data-a="decline">Atmesti</button>'}
+    else{
+      if(D.offer===s)st="Laukiama atsakymo į pasiūlymą…";
+      else if(turn===s){st=c.in_check()?"Šachas! Tavo ėjimas.":"Tavo ėjimas.";cls=c.in_check()?"bad":""}
+      else st="Priešininko ėjimas.";
+      const canUndo=c.history().length>0&&turn!==s&&!D.offer;
+      btns='<button class="btn" data-a="undo"'+(canUndo?"":" disabled")+'>Atšaukti ėjimą</button>'+
+        '<button class="btn" data-a="draw"'+(D.offer||c.history().length<2?" disabled":"")+'>Siūlyti lygiąsias</button>'+
+        '<button class="btn" data-a="resign">'+(D.ask===s+"resign"?"Tikrai pasiduoti?":"Pasiduoti")+'</button>'+
+        '<button class="btn" data-a="exit">'+(D.ask===s+"exit"?"Tikrai išeiti?":"Išeiti")+"</button>";
+    }
+    const adv=s==="w"?ci.diff:-ci.diff;
+    el.className="dp"+(!D.over&&turn===s?" act":"");
+    el.innerHTML='<div class="top"><div class="nm"><span class="gl">'+g(s==="w"?"♔":"♚")+"</span>"+(s==="w"?"Baltieji":"Juodieji")+"</div>"+(D.clock?'<span class="clk" id="dc-'+s+'">'+fmt(D.t[s])+"</span>":"")+"</div>"+
+      '<div class="cap">'+(ci.lost[o]||'<span class="small">Dar nieko nenukirtai</span>')+(adv>0?"<b>+"+adv+"</b>":"")+"</div>"+
+      '<div class="st '+cls+'">'+st+'</div><div class="btns">'+btns+"</div>";
+  });
+  renderClocks();
+}
+["w","b"].forEach(s=>$("dp-"+s).addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b||b.disabled)return;const a=b.dataset.a;const c=db.c;
+  if(a==="undo"){c.undo();db.last=null;db.sel=null;db.render();D.ask=null}
+  else if(a==="draw"){D.offer=s;D.ask=null}
+  else if(a==="accept"){endDuo("d","susitarta");return}
+  else if(a==="decline"){D.offer=null}
+  else if(a==="resign"){if(D.ask===s+"resign"){endDuo(s==="w"?"b":"w","priešininkas pasidavė");return}D.ask=s+"resign"}
+  else if(a==="exit"){if(D.over||c.history().length===0||D.ask===s+"exit"){exitDuo();return}D.ask=s+"exit"}
+  else if(a==="new"){startDuo();return}
+  renderDuo();
+}));
+$("d-start").onclick=startDuo;
+segInit("d-time",v=>{D.clock=+v});
+gb.load("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+function segInit(id,cb){const el=$(id);el.querySelectorAll("button").forEach(b=>b.onclick=()=>{el.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));cb(b.dataset.v)})}
+segInit("g-level",v=>{G.off=+v;renderPlay()});segInit("g-color",v=>{G.color=v});
+$("g-new").onclick=()=>{
+  if(G.on&&gb.c.history().length>=2){if(!confirm("Nebaigta partija bus įskaityta kaip pralaimėjimas. Pradėti naują?"))return;endGame("l","Partija nutraukta.")}
+  G.botElo=clampElo(S.elo+G.off);G.on=true;renderPlay();gb.flip=G.color==="b";gb.load("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  $("g-resign").disabled=false;status("g-status",G.color==="w"?"Tavo ėjimas.":"Robotas galvoja…");
+  if(G.color==="b")setTimeout(botTurn,300);
+};
+$("g-resign").onclick=()=>{if(G.on)endGame("l","Pasidavei. Kitą kartą pavyks!")};
+function onPlayerMove(){if(!checkEnd())setTimeout(botTurn,120)}
+function botTurn(){
+  if(!G.on)return;G.thinking=true;status("g-status","Robotas galvoja…");
+  setTimeout(()=>{const m=botMove(gb.c,G.botElo);if(!m){G.thinking=false;checkEnd();return}gb.last=gb.c.move(m);G.thinking=false;gb.render();if(!checkEnd())status("g-status","Robotas paėjo "+m.san+". Tavo ėjimas."+(gb.c.in_check()?" Tau šachas!":""),gb.c.in_check()?"bad":"")},60);
+}
+function checkEnd(){
+  const c=gb.c;if(!c.game_over())return false;
+  if(c.in_checkmate()){if(c.turn()===G.color)endGame("l","Matas. Robotas laimėjo – pažiūrėk, kur karalius liko neapsaugotas.");else endGame("w","Matas! Tu laimėjai!")}
+  else endGame("d","Lygiosios.");
+  return true;
+}
+function endGame(res,msg){
+  G.on=false;$("g-resign").disabled=true;S.games[res]=(S.games[res]||0)+1;
+  status("g-status",msg,res==="w"?"ok":res==="l"?"bad":"");
+  const score=res==="w"?1:res==="d"?.5:0;const E=1/(1+Math.pow(10,(G.botElo-S.elo)/400));
+  const K=(S.rated||0)<10?40:24;const delta=Math.round(K*(score-E));
+  S.elo=clampElo(S.elo+delta);S.rated=(S.rated||0)+1;S.eloPeak=Math.max(S.eloPeak||800,S.elo);
+  S.eloHist=(S.eloHist||[]).concat([{d:dkey(),e:S.elo}]).slice(-60);
+  toast("Elo "+(delta>=0?"+":"")+delta+" → "+S.elo);
+  if(res==="w"){S.gems=(S.gems||0)+10;setTimeout(()=>toast("+10 💎 deimantų!"),300)}
+  if(res==="w"){if(G.botElo>S.elo-delta)S.games.w2=(S.games.w2||0)+1;award(40+Math.max(0,Math.round((G.botElo-400)/20)),"pergalė")}
+  else if(res==="d")award(15,"lygiosios");else award(5,"už bandymą");
+}
+
+/* ---------- navigation ---------- */
+const VIEWS=["home","lessons","tactics","puzzles","play","progress","trainer","shop"];let shopFrom="home";
+const TOK={home:"siandien",lessons:"pamokos",tactics:"taktika",puzzles:"uzduotys",play:"zaisti",progress:"progresas",shop:"parduotuve"};
+function go(v){
+  VIEWS.forEach(x=>$("v-"+x).classList.toggle("on",x===v));
+  const navKey=v==="trainer"?T.from:v;
+  document.querySelectorAll("nav.tabs button").forEach(b=>{if(b.dataset.go===navKey)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  if(TOK[v]){try{history.replaceState(null,"","#"+TOK[v])}catch(e){}}
+  window.scrollTo(0,0);renderAll();
+}
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>go(b.dataset.go));
+
+/* ---------- renders ---------- */
+function achHtml(list){return list.map(a=>{const got=S.ach[a.id];return '<div class="badge '+(got?"got":"lock")+'"><div class="gl">'+(a.g==="🔥"?a.g:g(a.g))+"</div><b>"+a.n+'</b><span class="small muted">'+a.d+"</span></div>"}).join("")}
+function renderHome(){
+  const ri=rankIdx(S.xp),R=RANKS[ri],N=RANKS[ri+1];
+  $("h-piece").textContent=g(R.g);$("h-rank").textContent=R.n;
+  $("h-track").innerHTML=RANKS.map((r,i)=>'<span class="'+(i<ri?"got":i===ri?"now got":"")+'" title="'+r.n+'">'+g(r.g)+"</span>").join("");
+  if(N){const pct=Math.round((S.xp-R.xp)/(N.xp-R.xp)*100);$("h-bar").style.width=pct+"%";$("h-next").textContent="Turi "+S.xp+" XP. Iki "+N.gen+" liko "+(N.xp-S.xp)+" XP."}
+  else{$("h-bar").style.width="100%";$("h-next").textContent="Turi "+S.xp+" XP. Pasiekei aukščiausią rangą!"}
+  const tx=todayXp(),pct=Math.min(1,tx/S.goal);
+  $("h-ring").setAttribute("stroke-dashoffset",String(213.6*(1-pct)));$("h-ringtxt").textContent=tx;
+  $("h-goal").textContent=tx>=S.goal?"Pasiekta! Šiandien surinkai "+tx+" XP iš "+S.goal+".":"Šiandien "+tx+" iš "+S.goal+" XP. Liko "+(S.goal-tx)+".";
+  const st=streak();$("h-streak").textContent=st+" "+plural(st,"diena","dienos","dienų")+" iš eilės";
+  $("h-streaknote").textContent=st===0?"Pasiek dienos tikslą ir pradėk seriją.":(tx>=S.goal?"Šiandien jau įskaityta. Grįžk rytoj!":"Pasiek tikslą šiandien, kad serija nenutrūktų.");
+  const nl=LESSONS.find(l=>!S.lessons[l.id]);const np=PUZZLES.find(p=>!(S.puzzles[p.id]&&S.puzzles[p.id].solved));
+  const btn=$("h-continue");
+  const nt=TPZ.find(p=>!(S.tactics[p.id]&&S.tactics[p.id].solved));
+  $("h-elo").textContent=S.elo;$("h-elonote").textContent=(S.rated?"Sužaista reitinguotų partijų: "+S.rated+". Geriausias: "+S.eloPeak+".":"Sužaisk partiją su robotu ir reitingas pradės keistis.");
+  $("h-elobox").onclick=()=>go("play");
+  if(nl){btn.innerHTML="Tęsti: "+nl.t+"<small>Pamoka "+(LESSONS.indexOf(nl)+1)+" iš "+LESSONS.length+", +25 XP</small>";btn.onclick=()=>openLesson(nl.id)}
+  else if(nt){btn.innerHTML="Taktika: "+nt.tech.n.toLowerCase()+"<small>Užduotis "+nt.n+" iš "+nt.tech.pz.length+", +30 XP</small>";btn.onclick=()=>openTactic(nt.id)}
+  else if(np){btn.innerHTML="Kita užduotis: "+LV[np.lv].task.toLowerCase()+"<small>"+LV[np.lv].n+" užduotys, +"+LV[np.lv].xp+" XP</small>";btn.onclick=()=>openPuzzle(np.id)}
+  else{btn.innerHTML="Sužaisk partiją su robotu<small>Pergalė duoda iki 120 XP</small>";btn.onclick=()=>go("play")}
+  const got=ACH.filter(a=>S.ach[a.id]).sort((a,b)=>S.ach[b.id]<S.ach[a.id]?-1:1).slice(0,3);
+  const show=got.length?got:ACH.slice(0,3);
+  $("h-ach").innerHTML=achHtml(show)+(got.length?"":"");
+}
+function renderLessons(){
+  const open=[...document.querySelectorAll("#l-list details[open]")].map(x=>x.dataset.m);
+  const firstOpen=(LESSONS.find(l=>!S.lessons[l.id])||{m:0}).m;
+  $("l-list").innerHTML=MODS.map((name,mi)=>{const ls=LESSONS.filter(l=>l.m===mi);const done=ls.filter(l=>S.lessons[l.id]).length;
+    const isOpen=open.length?open.includes(String(mi)):mi===firstOpen;
+    return '<details class="mod" data-m="'+mi+'"'+(isOpen?" open":"")+'><summary><span class="mn">'+(mi+1)+'</span><span class="t"><b>'+name+'</b><span class="bar" style="margin-top:6px;height:6px"><i style="width:'+Math.round(done/ls.length*100)+'%"></i></span></span><span class="chip '+(done===ls.length?"ok":"")+'">'+done+"/"+ls.length+'</span></summary><div class="list" style="margin-top:8px">'+
+    ls.map(l=>{const i=LESSONS.indexOf(l);const d=S.lessons[l.id];return '<button class="item'+(d?" done":"")+'" data-id="'+l.id+'"><span class="gl">'+g(l.g)+'</span><span class="t"><b>'+(i+1)+". "+l.t+'</b><span class="small muted">'+l.task+'</span></span><span class="chip '+(d?"ok":"gold")+'">'+(d?"Baigta":"+25 XP")+"</span></button>"}).join("")+"</div></details>"}).join("");
+  $("l-list").querySelectorAll(".item").forEach(b=>b.onclick=()=>openLesson(b.dataset.id));
+}
+function tile(id,num,rec,sub){const st=rec&&rec.solved?(rec.clean?"clean":"done"):"";return '<button class="tile '+st+'" data-id="'+id+'" aria-label="Užduotis '+num+(st?", išspręsta":"")+'"><b>'+num+'</b><span>'+(st==="clean"?"★":st?"✓":sub)+'</span></button>'}
+function renderPuzzles(){
+  $("p-groups").innerHTML=[1,2,3].map(lv=>{const ps=PUZZLES.filter(p=>p.lv===lv);const done=ps.filter(p=>S.puzzles[p.id]&&S.puzzles[p.id].solved).length;
+    return '<div class="sec"><div class="row" style="justify-content:space-between;margin-bottom:4px"><h2>'+LV[lv].n+'</h2><span class="chip '+(done===ps.length?"ok":"")+'">'+done+" iš "+ps.length+'</span></div><p class="small muted" style="margin-bottom:10px">'+LV[lv].task+", +"+LV[lv].xp+' XP už užduotį</p><div class="tiles">'+
+    ps.map((p,i)=>tile(p.id,i+1,S.puzzles[p.id],p.fen.split(" ")[1]==="w"?"♔\uFE0E":"♚\uFE0E")).join("")+"</div></div>"}).join("")+'<p class="small muted" style="margin-top:14px">♔ eina baltieji, ♚ eina juodieji, ✓ išspręsta, ★ išspręsta iš pirmo karto.</p>';
+  $("p-groups").querySelectorAll(".tile").forEach(b=>b.onclick=()=>openPuzzle(b.dataset.id));
+}
+function renderTactics(){
+  $("x-list").innerHTML=TECH.map((t,k)=>{const done=t.pz.filter(p=>S.tactics[p.id]&&S.tactics[p.id].solved).length;
+    return '<div class="panel tech"><div class="head"><div class="gl">'+g(t.g)+'</div><div style="flex:1"><div class="row" style="justify-content:space-between"><h2>'+(k+1)+". "+t.n+'</h2><span class="chip '+(done===t.pz.length?"ok":"")+'">'+done+" iš "+t.pz.length+'</span></div>'+
+    t.txt.map(x=>'<p style="margin-top:8px">'+x+"</p>").join("")+'</div></div><div class="tiles" style="margin-top:14px">'+
+    t.pz.map(p=>tile(p.id,p.n,S.tactics[p.id],"+30")).join("")+"</div></div>"}).join("");
+  $("x-list").querySelectorAll(".tile").forEach(b=>b.onclick=()=>openTactic(b.dataset.id));
+}
+function renderPlay(){
+  const be=G.on?G.botElo:clampElo(S.elo+G.off);$("g-me").textContent=S.elo;$("g-bot").textContent=be;
+  const P=botParams(be);$("g-levelnote").textContent="Robotas skaičiuoja "+P.d+" "+plural(P.d,"ėjimą","ėjimus","ėjimų")+" į priekį"+(P.r?" ir kartais suklysta.":".")+" Pergalė duos +"+(40+Math.max(0,Math.round((be-400)/20)))+" XP.";const gm=S.games;$("g-record").textContent="Tavo rezultatai: "+(gm.w||0)+" "+plural(gm.w||0,"pergalė","pergalės","pergalių")+", "+(gm.d||0)+" lyg., "+(gm.l||0)+" "+plural(gm.l||0,"pralaimėjimas","pralaimėjimai","pralaimėjimų")+"."}
+function renderProgress(){
+  const L=Object.keys(S.lessons).length,P=Object.values(S.puzzles).filter(p=>p.solved).length;
+  const cleanN=Object.values(S.puzzles).filter(p=>p.clean).length;
+  const acc=P?Math.round(cleanN/P*100):0;
+  const TX=TPZ.filter(p=>S.tactics[p.id]&&S.tactics[p.id].solved).length;
+  $("s-stats").innerHTML=[
+    ["Elo reitingas",S.elo],["Geriausias Elo",S.eloPeak||S.elo],["Taktika",TX+"/"+TPZ.length],
+    ["XP iš viso",S.xp],["Pamokos",L+"/"+LESSONS.length],["Užduotys",P+"/"+PUZZLES.length],["Be klaidų",P?acc+"%":"–"]
+  ].map(([a,b])=>'<div class="panel stat"><b>'+b+'</b><span class="small muted">'+a+"</span></div>").join("");
+  // elo chart
+  {const pts=[{e:800}].concat(S.eloHist||[]);const W=560,H=190,pl=40,pb=20,pt=14;
+   const lo=Math.min(...pts.map(p=>p.e))-50,hi=Math.max(...pts.map(p=>p.e))+50;
+   const x=i=>pl+(pts.length<2?0:i*(W-pl-12)/(pts.length-1)),y=e=>pt+(H-pb-pt)*(1-(e-lo)/(hi-lo));
+   let sv="";[lo+50,Math.round((lo+hi)/2),hi-50].forEach(v=>{sv+='<line x1="'+pl+'" x2="'+(W-4)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--line)"/><text x="'+(pl-6)+'" y="'+(y(v)+4)+'" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Manrope,sans-serif">'+Math.round(v)+"</text>"});
+   if(pts.length<2)sv+='<text x="'+(W/2)+'" y="'+(H/2)+'" text-anchor="middle" font-size="14" fill="var(--muted)" font-family="Manrope,sans-serif">Sužaisk pirmą partiją ir čia atsiras tavo kelias</text>';
+   else{sv+='<polyline fill="none" stroke="var(--gold)" stroke-width="3" stroke-linejoin="round" points="'+pts.map((p,i)=>x(i)+","+y(p.e)).join(" ")+'"/>';
+     pts.forEach((p,i)=>{sv+='<circle cx="'+x(i)+'" cy="'+y(p.e)+'" r="'+(i===pts.length-1?5:3)+'" fill="'+(i===pts.length-1?"var(--gold)":"var(--surface)")+'" stroke="var(--gold)" stroke-width="2"><title>'+(p.d||"Pradžia")+": "+p.e+"</title></circle>"})}
+   $("s-elo").innerHTML=sv;}
+  // chart
+  const days=[];for(let i=13;i>=0;i--){const d=daysAgo(i);days.push({d:d,v:S.daily[dkey(d)]||0})}
+  const max=Math.max(S.goal,...days.map(x=>x.v))*1.15;const W=560,H=190,pl=34,pb=26,pt=10,bw=(W-pl-8)/14;
+  let svg="";const gy=pt+(H-pb-pt)*(1-S.goal/max);
+  svg+='<line x1="'+pl+'" x2="'+(W-4)+'" y1="'+gy+'" y2="'+gy+'" stroke="var(--gold)" stroke-dasharray="4 4"/><text x="'+(pl-4)+'" y="'+(gy+4)+'" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Manrope,sans-serif">'+S.goal+"</text>";
+  days.forEach((x,i)=>{const h=(H-pb-pt)*(x.v/max);const xx=pl+i*bw+bw*.18;const met=x.v>=S.goal;
+    svg+='<rect x="'+xx+'" y="'+(H-pb-h)+'" width="'+(bw*.64)+'" height="'+Math.max(h,x.v?2:0)+'" rx="3" fill="'+(met?"var(--gold)":"var(--sq-d)")+'"><title>'+dkey(x.d)+": "+x.v+" XP</title></rect>";
+    if(x.v)svg+='<text x="'+(xx+bw*.32)+'" y="'+(H-pb-h-4)+'" text-anchor="middle" font-size="10" fill="var(--ink)" font-family="Manrope,sans-serif">'+x.v+"</text>";
+    svg+='<text x="'+(xx+bw*.32)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="Manrope,sans-serif">'+x.d.getDate()+"</text>"});
+  svg+='<line x1="'+pl+'" x2="'+(W-4)+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'" stroke="var(--line)"/>';
+  $("s-chart").innerHTML=svg;
+  // heatmap
+  let hm="";for(let i=27;i>=0;i--){const v=S.daily[dkey(daysAgo(i))]||0;hm+='<i class="'+(v>=S.goal?"a2":v>0?"a1":"")+(i===0?" today":"")+'" title="'+dkey(daysAgo(i))+": "+v+' XP"></i>'}
+  $("s-heat").innerHTML=hm;
+  $("s-goal").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.v===S.goal)));
+  $("s-ach").innerHTML=achHtml(ACH);
+}
+segInit("s-goal",v=>{S.goal=+v;checkAch();save();renderAll()});
+$("s-reset").onclick=()=>{if(confirm("Ištrinti visą progresą? To nebus galima atšaukti.")){S=blank();save();renderAll();toast("Progresas ištrintas")}};
+function applySkin(){["t-board","g-board","d-board"].forEach(id=>{const el=$(id);el.className=el.className.split(" ").filter(c=>c.indexOf("skin-")!==0).join(" ")+" skin-"+(S.skin||"classic")})}
+function miniBoard(id){const top=["♜","♞","♛","♚"],bot=["♚","♛","♝","♟"];let h="";
+  const TY={"♜":"r","♞":"n","♛":"q","♚":"k","♝":"b","♟":"p"};
+  top.forEach((x,i)=>h+='<div class="sq '+(i%2?"d":"l")+'"><span class="pc b p'+TY[x]+'">'+g(x)+"</span></div>");
+  bot.forEach((x,i)=>h+='<div class="sq '+(i%2?"l":"d")+'"><span class="pc w p'+TY[x]+'">'+g(x)+"</span></div>");
+  return '<div class="mini skin-'+id+'" aria-hidden="true">'+h+"</div>"}
+function renderShop(){
+  const gems=S.gems||0;$("sh-gems").textContent=gems;
+  $("sh-list").innerHTML=SKINS.map(k=>{const own=(S.skins||[]).includes(k.id),on=(S.skin||"classic")===k.id;
+    let btn;if(on)btn='<button class="btn" disabled>Naudojama</button>';
+    else if(own)btn='<button class="btn primary" data-use="'+k.id+'">Naudoti</button>';
+    else if(gems>=k.p)btn='<button class="btn gold" data-buy="'+k.id+'">Pirkti už '+k.p+' 💎</button>';
+    else btn='<button class="btn" disabled>'+k.p+" 💎, trūksta "+(k.p-gems)+"</button>";
+    return '<div class="skin-card'+(on?" on":"")+'">'+miniBoard(k.id)+'<div class="row" style="justify-content:space-between"><h3>'+k.n+'</h3><span class="tier">'+k.tier+'</span></div><p class="small muted" style="flex:1">'+k.d+"</p>"+btn+"</div>"}).join("");
+  $("sh-list").querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{const k=SKINS.find(x=>x.id===b.dataset.buy);if((S.gems||0)<k.p)return;
+    S.gems-=k.p;S.skins=(S.skins||["classic"]).concat([k.id]);S.skin=k.id;toast("Įsigijai: "+k.n);checkAch();save();renderAll()});
+  $("sh-list").querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>{S.skin=b.dataset.use;save();renderAll()});
+}
+function openShop(from){shopFrom=from;go("shop")}
+$("h-gembox").onclick=()=>openShop("home");$("g-shop").onclick=()=>openShop("play");$("sh-back").onclick=()=>go(shopFrom);
+function renderGems(){const gm=S.gems||0;$("h-gems").textContent=gm;$("g-gems").textContent=gm;
+  const next=SKINS.find(k=>!(S.skins||[]).includes(k.id)&&k.p>gm);const owned=(S.skins||["classic"]).length;
+  $("h-gemnote").textContent="Turi "+owned+" iš "+SKINS.length+" figūrų rinkinių."+(SKINS.some(k=>!(S.skins||[]).includes(k.id)&&k.p<=gm)?" Gali įsigyti naują – užsuk į parduotuvę!":next?" Iki „"+next.n+"“ liko "+(next.p-gm)+" 💎.":" Surinkai visus!")}
+function renderAll(){applySkin();renderGems();renderShop();renderHome();renderLessons();renderTactics();renderPuzzles();renderPlay();renderProgress()}
+
+/* ---------- start ---------- */
+checkAch();courseCheck();
+const h=(location.hash||"").replace("#","");const start=Object.keys(TOK).find(k=>TOK[k]===h)||"home";
+go(start);
+})();
+</script>
+<script>
+if("serviceWorker" in navigator&&location.protocol!=="file:"){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+</script>
+</body>
+</html>
